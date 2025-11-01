@@ -14,12 +14,7 @@ export interface Processor {
     messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
-<<<<<<< HEAD
-    runtimeContext?: RequestContext;
-  }): Promise<MastraMessageV2[]> | MastraMessageV2[];
-=======
-  }): Promise<MastraDBMessage[]> | MastraDBMessage[];
->>>>>>> origin/main
+}): Promise<MastraDBMessage[]> | MastraDBMessage[];
 
   /**
    * Process output stream chunks with built-in state management
@@ -42,12 +37,7 @@ export interface Processor {
     messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
-<<<<<<< HEAD
-    runtimeContext?: RequestContext;
-  }): Promise<MastraMessageV2[]> | MastraMessageV2[];
-=======
-  }): Promise<MastraDBMessage[]> | MastraDBMessage[];
->>>>>>> origin/main
+}): Promise<MastraDBMessage[]> | MastraDBMessage[];
 }
 
 type WithRequired<T, K extends keyof T> = T & { [P in K]-?: NonNullable<T[P]> };

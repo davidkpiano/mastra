@@ -4,12 +4,7 @@ import type { AssistantContent, CoreMessage, ToolContent, UserContent } from '@i
 import type { JSONSchema7 } from 'json-schema';
 import type { ZodObject } from 'zod';
 
-<<<<<<< HEAD
-export type { MastraMessageV2 } from '../agent';
-=======
 export type { MastraDBMessage } from '../agent';
-import type { ZodObject } from 'zod';
->>>>>>> origin/main
 import type { EmbeddingModelId } from '../llm/model/index.js';
 import type { MastraLanguageModel } from '../llm/model/shared.types';
 import type { RequestContext } from '../request-context';

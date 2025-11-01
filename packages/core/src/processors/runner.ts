@@ -81,26 +81,17 @@ export class ProcessorRunner {
     this.agentName = agentName;
   }
 
-<<<<<<< HEAD
-  async runOutputProcessors(
+async runOutputProcessors(
     messageList: MessageList,
     tracingContext?: TracingContext,
     telemetry?: any,
     runtimeContext?: RequestContext,
   ): Promise<MessageList> {
-    const responseMessages = messageList.clear.response.v2();
-=======
-  async runOutputProcessors(messageList: MessageList, tracingContext?: TracingContext): Promise<MessageList> {
     const responseMessages = messageList.clear.response.db();
->>>>>>> origin/main
 
     let processableMessages: MastraDBMessage[] = [...responseMessages];
 
-<<<<<<< HEAD
-    const ctx: { messages: MastraMessageV2[]; abort: () => never; runtimeContext?: RequestContext } = {
-=======
-    const ctx: { messages: MastraDBMessage[]; abort: () => never } = {
->>>>>>> origin/main
+const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: RequestContext } = {
       messages: processableMessages,
       abort: () => {
         throw new TripWire('Tripwire triggered');
@@ -326,27 +317,18 @@ export class ProcessorRunner {
     });
   }
 
-<<<<<<< HEAD
-  async runInputProcessors(
+async runInputProcessors(
     messageList: MessageList,
     tracingContext?: TracingContext,
     telemetry?: any,
     runtimeContext?: RequestContext,
   ): Promise<MessageList> {
     // Get input messages without clearing yet
-    const userMessages = messageList.get.input.v2();
-=======
-  async runInputProcessors(messageList: MessageList, tracingContext?: TracingContext): Promise<MessageList> {
-    const userMessages = messageList.clear.input.db();
->>>>>>> origin/main
+    const userMessages = messageList.get.input.db();
 
     let processableMessages: MastraDBMessage[] = [...userMessages];
 
-<<<<<<< HEAD
-    const ctx: { messages: MastraMessageV2[]; abort: () => never; runtimeContext?: RequestContext } = {
-=======
-    const ctx: { messages: MastraDBMessage[]; abort: () => never } = {
->>>>>>> origin/main
+const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: RequestContext } = {
       messages: processableMessages,
       abort: () => {
         throw new TripWire('Tripwire triggered');

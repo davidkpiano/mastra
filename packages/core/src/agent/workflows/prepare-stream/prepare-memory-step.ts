@@ -162,37 +162,11 @@ export function createPrepareMemoryStep<
         });
       }
 
-<<<<<<< HEAD
       // Set memory context in RequestContext for processors to access
       requestContext.set('MastraMemory', {
         thread: threadObject,
         resourceId,
         memoryConfig,
-=======
-      const config = memory.getMergedThreadConfig(memoryConfig || {});
-      const hasResourceScopeSemanticRecall =
-        (typeof config?.semanticRecall === 'object' && config?.semanticRecall?.scope !== 'thread') ||
-        config?.semanticRecall === true;
-      let [memoryResult, memorySystemMessage] = await Promise.all([
-        existingThread || hasResourceScopeSemanticRecall
-          ? capabilities.getMemoryMessages({
-              resourceId,
-              threadId: threadObject.id,
-              vectorMessageSearch: new MessageList().add(options.messages, `user`).getLatestUserContent() || '',
-              memoryConfig,
-              requestContext,
-            })
-          : { messages: [] },
-        memory.getSystemMessage({ threadId: threadObject.id, resourceId, memoryConfig }),
-      ]);
-
-      const memoryMessages = memoryResult.messages;
-
-      capabilities.logger.debug('Fetched messages from memory', {
-        threadId: threadObject.id,
-        runId,
-        fetchedCount: memoryMessages.length,
->>>>>>> origin/main
       });
 
       // Add user messages - memory processors will handle history/semantic recall/working memory
@@ -212,13 +186,7 @@ export function createPrepareMemoryStep<
       messageList.add(options.context || [], 'context');
 
       // Add user-provided system message if present
-<<<<<<< HEAD
       addSystemMessage(messageList, options.system, 'user-provided');
-=======
-      addSystemMessage(processedList, options.system, 'user-provided');
-
-      processedList.add(processedMemoryMessages, 'memory').add(messageList.get.input.db(), 'user');
->>>>>>> origin/main
 
       return {
         thread: threadObject,

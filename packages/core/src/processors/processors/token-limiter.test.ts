@@ -1,12 +1,8 @@
 import type { TextPart } from '@internal/ai-sdk-v4/message';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-<<<<<<< HEAD
 
-import type { MastraMessageV2 } from '../../agent/message-list';
-import { RequestContext } from '../../request-context';
-=======
 import type { MastraDBMessage } from '../../agent/message-list';
->>>>>>> origin/main
+import { RequestContext } from '../../request-context';
 import type { ChunkType } from '../../stream';
 import { ChunkFrom } from '../../stream/types';
 

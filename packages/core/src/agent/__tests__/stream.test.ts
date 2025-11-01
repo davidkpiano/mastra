@@ -727,7 +727,6 @@ function runStreamTest(version: 'v1' | 'v2') {
       const mockMemory = new MockMemory();
       const threadId = '1';
       const resourceId = '2';
-<<<<<<< HEAD
 
       // Save historical messages to storage (for MessageHistory processor to retrieve)
       await mockMemory.storage.saveThread({
@@ -754,19 +753,6 @@ function runStreamTest(version: 'v1' | 'v2') {
         ],
         format: 'v2',
       });
-=======
-      // @ts-ignore
-      mockMemory.rememberMessages = async function rememberMessages() {
-        const list = new MessageList({ threadId, resourceId }).add(
-          [
-            { role: `user`, content: `hello!`, threadId, resourceId },
-            { role: 'assistant', content: 'hi, how are you?', threadId, resourceId },
-          ],
-          `memory`,
-        );
-        return { messages: list.get.remembered.aiV4.core(), messagesV2: list.get.remembered.db() };
-      };
->>>>>>> origin/main
 
       mockMemory.getThreadById = async function getThreadById() {
         return { id: '1', createdAt: new Date(), resourceId: '2', updatedAt: new Date() } satisfies StorageThreadType;

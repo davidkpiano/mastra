@@ -65,7 +65,7 @@ import { DefaultVoice } from '../voice';
 import type { Workflow } from '../workflows';
 import type { AgentExecutionOptions, InnerAgentExecutionOptions, MultiPrimitiveExecutionOptions } from './agent.types';
 import { MessageList } from './message-list';
-import type { MessageInput, MessageListInput, UIMessageWithMetadata, MastraDBMessage } from './message-list';
+import type { MessageInput, MessageListInput, UIMessageWithMetadata } from './message-list';
 import { SaveQueueManager } from './save-queue';
 import { TripWire } from './trip-wire';
 import type {
@@ -354,28 +354,21 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
    * Resolves and returns output processors from agent configuration.
    * @internal
    */
-<<<<<<< HEAD
-  private async getResolvedOutputProcessors(runtimeContext?: RequestContext): Promise<OutputProcessor[]> {
+  private async listResolvedOutputProcessors(requestContext?: RequestContext): Promise<OutputProcessor[]> {
     // Get configured output processors
     const configuredProcessors = this.#outputProcessors
       ? typeof this.#outputProcessors === 'function'
-        ? await this.#outputProcessors({ requestContext: runtimeContext || new RequestContext() })
+        ? await this.#outputProcessors({ requestContext: requestContext || new RequestContext() })
         : this.#outputProcessors
       : [];
-=======
-  private async listResolvedOutputProcessors(requestContext?: RequestContext): Promise<OutputProcessor[]> {
-    if (!this.#outputProcessors) {
-      return [];
-    }
->>>>>>> origin/main
 
     // Get memory output processors (with deduplication)
     const memory =
       typeof this.#memory === 'function'
-        ? await this.#memory({ requestContext: runtimeContext || new RequestContext() })
+        ? await this.#memory({ requestContext: requestContext || new RequestContext() })
         : this.#memory;
 
-    const memoryProcessors = memory ? memory.getOutputProcessors(configuredProcessors, runtimeContext) : [];
+    const memoryProcessors = memory ? memory.getOutputProcessors(configuredProcessors, requestContext) : [];
 
     // Memory processors should run last (to persist messages after other processing)
     return [...configuredProcessors, ...memoryProcessors];
@@ -385,28 +378,21 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
    * Resolves and returns input processors from agent configuration.
    * @internal
    */
-<<<<<<< HEAD
-  private async getResolvedInputProcessors(runtimeContext?: RequestContext): Promise<InputProcessor[]> {
+  private async listResolvedInputProcessors(requestContext?: RequestContext): Promise<InputProcessor[]> {
     // Get configured input processors
     const configuredProcessors = this.#inputProcessors
       ? typeof this.#inputProcessors === 'function'
-        ? await this.#inputProcessors({ requestContext: runtimeContext || new RequestContext() })
+        ? await this.#inputProcessors({ requestContext: requestContext || new RequestContext() })
         : this.#inputProcessors
       : [];
-=======
-  private async listResolvedInputProcessors(requestContext?: RequestContext): Promise<InputProcessor[]> {
-    if (!this.#inputProcessors) {
-      return [];
-    }
->>>>>>> origin/main
 
     // Get memory input processors (with deduplication)
     const memory =
       typeof this.#memory === 'function'
-        ? await this.#memory({ requestContext: runtimeContext || new RequestContext() })
+        ? await this.#memory({ requestContext: requestContext || new RequestContext() })
         : this.#memory;
 
-    const memoryProcessors = memory ? memory.getInputProcessors(configuredProcessors, runtimeContext) : [];
+    const memoryProcessors = memory ? memory.getInputProcessors(configuredProcessors, requestContext) : [];
 
     // Memory processors should run first (to fetch history, semantic recall, working memory)
     return [...memoryProcessors, ...configuredProcessors];
@@ -1388,39 +1374,6 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
   }
 
   /**
-<<<<<<< HEAD
-=======
-   * Fetches remembered messages from memory for the current thread.
-   * @internal
-   */
-  private async getMemoryMessages({
-    resourceId,
-    threadId,
-    vectorMessageSearch,
-    memoryConfig,
-    requestContext,
-  }: {
-    resourceId?: string;
-    threadId: string;
-    vectorMessageSearch: string;
-    memoryConfig?: MemoryConfig;
-    requestContext: RequestContext;
-  }): Promise<{ messages: MastraDBMessage[] }> {
-    const memory = await this.getMemory({ requestContext });
-    if (!memory) {
-      return { messages: [] };
-    }
-    return memory.rememberMessages({
-      threadId,
-      resourceId,
-      config: memoryConfig,
-      // The new user messages aren't in the list yet cause we add memory messages first to try to make sure ordering is correct (memory comes before new user messages)
-      vectorMessageSearch,
-    });
-  }
-
-  /**
->>>>>>> origin/main
    * Retrieves and converts assigned tools to CoreTool format.
    * @internal
    */
@@ -2265,7 +2218,6 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
           });
         }
 
-<<<<<<< HEAD
         // Set memory context in RequestContext for processors to access
         requestContext.set('MastraMemory', {
           thread: threadObject,
@@ -2275,81 +2227,6 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
 
         // Add new user messages to message list
         messageList.add(messages, 'input');
-=======
-        const config = memory.getMergedThreadConfig(memoryConfig || {});
-        const hasResourceScopeSemanticRecall =
-          (typeof config?.semanticRecall === 'object' && config?.semanticRecall?.scope !== 'thread') ||
-          config?.semanticRecall === true;
-        let [memoryResult, memorySystemMessage] = await Promise.all([
-          existingThread || hasResourceScopeSemanticRecall
-            ? this.getMemoryMessages({
-                resourceId,
-                threadId: threadObject.id,
-                vectorMessageSearch: new MessageList().add(messages, `user`).getLatestUserContent() || '',
-                memoryConfig,
-                requestContext,
-              })
-            : { messages: [] },
-          memory.getSystemMessage({ threadId: threadObject.id, resourceId, memoryConfig }),
-        ]);
-
-        const memoryMessages = memoryResult.messages;
-
-        this.logger.debug('Fetched messages from memory', {
-          threadId: threadObject.id,
-          runId,
-          fetchedCount: memoryMessages.length,
-        });
-
-        // So the agent doesn't get confused and start replying directly to messages
-        // that were added via semanticRecall from a different conversation,
-        // we need to pull those out and add to the system message.
-        const resultsFromOtherThreads = memoryMessages.filter(m => m.threadId !== threadObject.id);
-        if (resultsFromOtherThreads.length && !memorySystemMessage) {
-          memorySystemMessage = ``;
-        }
-        if (resultsFromOtherThreads.length) {
-          memorySystemMessage += `\nThe following messages were remembered from a different conversation:\n<remembered_from_other_conversation>\n${(() => {
-            let result = ``;
-
-            const messages = new MessageList().add(resultsFromOtherThreads, 'memory').get.all.v1();
-            let lastYmd: string | null = null;
-            for (const msg of messages) {
-              const date = msg.createdAt;
-              const year = date.getUTCFullYear();
-              const month = date.toLocaleString('default', { month: 'short' });
-              const day = date.getUTCDate();
-              const ymd = `${year}, ${month}, ${day}`;
-              const utcHour = date.getUTCHours();
-              const utcMinute = date.getUTCMinutes();
-              const hour12 = utcHour % 12 || 12;
-              const ampm = utcHour < 12 ? 'AM' : 'PM';
-              const timeofday = `${hour12}:${utcMinute < 10 ? '0' : ''}${utcMinute} ${ampm}`;
-
-              if (!lastYmd || lastYmd !== ymd) {
-                result += `\nthe following messages are from ${ymd}\n`;
-              }
-              result += `
-  Message ${msg.threadId && msg.threadId !== threadObject.id ? 'from previous conversation' : ''} at ${timeofday}: ${JSON.stringify(msg)}`;
-
-              lastYmd = ymd;
-            }
-            return result;
-          })()}\n<end_remembered_from_other_conversation>`;
-        }
-
-        if (memorySystemMessage) {
-          messageList.addSystem(memorySystemMessage, 'memory');
-        }
-
-        messageList
-          .add(
-            memoryMessages.filter((m: MastraDBMessage) => m.threadId === threadObject.id), // filter out messages from other threads. those are added to system message above
-            'memory',
-          )
-          // add new user messages to the list AFTER remembered messages to make ordering more reliable
-          .add(messages, 'user');
->>>>>>> origin/main
 
         // Run input processors (including MessageHistory, SemanticRecall, WorkingMemory)
         const { tripwireTriggered, tripwireReason } = await this.__runInputProcessors({
@@ -2372,12 +2249,7 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
           .addSystem(instructions || (await this.getInstructions({ requestContext })))
           .addSystem(systemMessages)
           .add(context || [], 'context')
-<<<<<<< HEAD
-          .add(messageList.get.all.v2(), 'user')
-=======
-          .add(processedMemoryMessages, 'memory')
           .add(messageList.get.input.db(), 'user')
->>>>>>> origin/main
           .get.all.prompt();
 
         return {
