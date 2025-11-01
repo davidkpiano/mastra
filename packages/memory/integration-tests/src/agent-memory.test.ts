@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
-import { Mastra } from '@mastra/core';
 import type { UIMessageWithMetadata } from '@mastra/core/agent';
 import { Agent } from '@mastra/core/agent';
 import type { CoreMessage } from '@mastra/core/llm';
+import { Mastra } from '@mastra/core/mastra';
 import { RequestContext } from '@mastra/core/request-context';
 import { MockStore } from '@mastra/core/storage';
 import { fastembed } from '@mastra/fastembed';
@@ -195,6 +195,20 @@ describe('Agent Memory Tests', () => {
     // due to resource scope, even on the first message
     const thread2Id = randomUUID();
 
+<<<<<<< HEAD
+=======
+    // Mock the getMemoryMessages method to track if it's called
+    let getMemoryMessagesCalled = false;
+    let retrievedMemoryMessages: any[] = [];
+    const originalGetMemoryMessages = (agent as any).getMemoryMessages;
+    (agent as any).getMemoryMessages = async (...args: any[]) => {
+      getMemoryMessagesCalled = true;
+      const result = await originalGetMemoryMessages.call(agent, ...args);
+      retrievedMemoryMessages = result?.messages ? result : { messages: [] };
+      return result;
+    };
+
+>>>>>>> origin/main
     const secondResponse = await agent.generateLegacy('What did we discuss about cats?', {
       memory: {
         thread: thread2Id,
@@ -202,8 +216,25 @@ describe('Agent Memory Tests', () => {
       },
     });
 
+<<<<<<< HEAD
     // Verify that the agent was able to access cross-thread memory
     // by checking that the response references the previous conversation
+=======
+    // Restore original method
+    (agent as any).getMemoryMessages = originalGetMemoryMessages;
+
+    expect(getMemoryMessagesCalled).toBe(true);
+
+    // Verify that getMemoryMessages actually returned messages from the first thread
+    expect(retrievedMemoryMessages.messages.length).toBeGreaterThan(0);
+
+    // Verify that the retrieved messages contain content from the first thread
+    const hasMessagesFromFirstThread = retrievedMemoryMessages.messages.some(
+      msg =>
+        msg.threadId === thread1Id || (typeof msg.content === 'string' && msg.content.toLowerCase().includes('cat')),
+    );
+    expect(hasMessagesFromFirstThread).toBe(true);
+>>>>>>> origin/main
     expect(secondResponse.text.toLowerCase()).toMatch(/(cat|animal|discuss)/);
 
     // Verify that the second thread now has messages
@@ -252,12 +283,16 @@ describe('Agent Memory Tests', () => {
 
       // Fetch messages from memory
       const agentMemory = (await agent.getMemory())!;
-      const { messages, uiMessages } = await agentMemory.query({ threadId });
-      const userMessages = messages.filter((m: any) => m.role === 'user').map((m: any) => m.content);
-      const userUiMessages = uiMessages.filter((m: any) => m.role === 'user').map((m: any) => m.content);
+      const { messages } = await agentMemory.query({ threadId });
+      const userMessages = messages
+        .filter((m: any) => m.role === 'user')
+        .map((m: any) => {
+          // Extract text from MastraDBMessage content.parts
+          const textParts = m.content.parts?.filter((p: any) => p.type === 'text') || [];
+          return textParts.map((p: any) => p.text).join('');
+        });
 
       expect(userMessages).toEqual(expect.arrayContaining(['First message', 'Second message']));
-      expect(userUiMessages).toEqual(expect.arrayContaining(['First message', 'Second message']));
     });
 
     it('should save assistant responses for both text and object output modes', async () => {
@@ -280,24 +315,15 @@ describe('Agent Memory Tests', () => {
 
       // Fetch messages from memory
       const agentMemory = (await agent.getMemory())!;
-      const { messages, uiMessages } = await agentMemory.query({ threadId });
-      const userMessages = messages.filter((m: any) => m.role === 'user').map((m: any) => m.content);
-      const userUiMessages = uiMessages.filter((m: any) => m.role === 'user').map((m: any) => m.content);
-      const assistantMessages = messages.filter((m: any) => m.role === 'assistant').map((m: any) => m.content);
-      const assistantUiMessages = uiMessages.filter((m: any) => m.role === 'assistant').map((m: any) => m.content);
+      const { messages } = await agentMemory.query({ threadId });
+      const userMessages = messages
+        .filter((m: any) => m.role === 'user')
+        .map((m: any) => m.content.parts?.find((p: any) => p.type === 'text')?.text || '');
+      const assistantMessages = messages
+        .filter((m: any) => m.role === 'assistant')
+        .map((m: any) => m.content.parts?.find((p: any) => p.type === 'text')?.text || '');
       expect(userMessages).toEqual(expect.arrayContaining(['What is 2+2?', 'Give me JSON']));
-      expect(userUiMessages).toEqual(expect.arrayContaining(['What is 2+2?', 'Give me JSON']));
-      function flattenAssistantMessages(messages: any[]) {
-        return messages.flatMap(msg =>
-          Array.isArray(msg) ? msg.map(part => (typeof part === 'object' && part.text ? part.text : part)) : msg,
-        );
-      }
-
-      expect(flattenAssistantMessages(assistantMessages)).toEqual(
-        expect.arrayContaining([expect.stringContaining('2 + 2'), expect.stringContaining('"result"')]),
-      );
-
-      expect(flattenAssistantMessages(assistantUiMessages)).toEqual(
+      expect(assistantMessages).toEqual(
         expect.arrayContaining([expect.stringContaining('2 + 2'), expect.stringContaining('"result"')]),
       );
     });
@@ -325,15 +351,17 @@ describe('Agent Memory Tests', () => {
       const { messages } = await agentMemory.query({ threadId });
 
       // Assert that the context messages are NOT saved
-      const savedContextMessages = messages.filter(
-        (m: any) => m.content === contextMessageContent1 || m.content === contextMessageContent2,
-      );
+      const savedContextMessages = messages.filter((m: any) => {
+        const text = m.content.parts?.find((p: any) => p.type === 'text')?.text || '';
+        return text === contextMessageContent1 || text === contextMessageContent2;
+      });
       expect(savedContextMessages.length).toBe(0);
 
       // Assert that the user message IS saved
       const savedUserMessages = messages.filter((m: any) => m.role === 'user');
       expect(savedUserMessages.length).toBe(1);
-      expect(savedUserMessages[0].content).toBe(userMessageContent);
+      const savedUserText = savedUserMessages[0].content.parts?.find((p: any) => p.type === 'text')?.text || '';
+      expect(savedUserText).toBe(userMessageContent);
     });
 
     it('should persist UIMessageWithMetadata through agent generate and memory', async () => {
@@ -374,41 +402,53 @@ describe('Agent Memory Tests', () => {
 
       // Fetch messages from memory
       const agentMemory = (await agent.getMemory())!;
-      const { uiMessages } = await agentMemory.query({ threadId });
+      const { messages } = await agentMemory.query({ threadId });
 
       // Check that all user messages were saved
-      const savedUserMessages = uiMessages.filter((m: any) => m.role === 'user');
+      const savedUserMessages = messages.filter((m: any) => m.role === 'user');
       expect(savedUserMessages.length).toBe(2);
 
       // Check that metadata was persisted in the stored messages
-      const firstMessage = uiMessages.find((m: any) => m.content === 'Hello with metadata');
-      const secondMessage = uiMessages.find((m: any) => m.content === 'Another message with different metadata');
+      const firstMessage = messages.find((m: any) => {
+        const textContent = m.content?.parts?.find((p: any) => p.type === 'text')?.text;
+        return textContent === 'Hello with metadata';
+      });
+      const secondMessage = messages.find((m: any) => {
+        const textContent = m.content?.parts?.find((p: any) => p.type === 'text')?.text;
+        return textContent === 'Another message with different metadata';
+      });
 
       expect(firstMessage).toBeDefined();
-      expect(firstMessage!.metadata).toEqual({
+      expect(firstMessage!.content.metadata).toEqual({
         source: 'web-ui',
         timestamp: expect.any(Number),
         customField: 'custom-value',
       });
 
       expect(secondMessage).toBeDefined();
-      expect(secondMessage!.metadata).toEqual({
+      expect(secondMessage!.content.metadata).toEqual({
         source: 'mobile-app',
         version: '1.0.0',
         userId: 'user-123',
       });
 
-      // Check UI messages also preserve metadata
-      const firstUIMessage = uiMessages.find((m: any) => m.content === 'Hello with metadata');
-      const secondUIMessage = uiMessages.find((m: any) => m.content === 'Another message with different metadata');
+      // Check stored messages also preserve metadata
+      const firstStoredMessage = messages.find((m: any) => {
+        const textContent = m.content?.parts?.find((p: any) => p.type === 'text')?.text;
+        return textContent === 'Hello with metadata';
+      });
+      const secondStoredMessage = messages.find((m: any) => {
+        const textContent = m.content?.parts?.find((p: any) => p.type === 'text')?.text;
+        return textContent === 'Another message with different metadata';
+      });
 
-      expect(firstUIMessage?.metadata).toEqual({
+      expect(firstStoredMessage?.content.metadata).toEqual({
         source: 'web-ui',
         timestamp: expect.any(Number),
         customField: 'custom-value',
       });
 
-      expect(secondUIMessage?.metadata).toEqual({
+      expect(secondStoredMessage?.content.metadata).toEqual({
         source: 'mobile-app',
         version: '1.0.0',
         userId: 'user-123',

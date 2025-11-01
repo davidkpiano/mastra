@@ -1,9 +1,13 @@
 import { Tiktoken } from 'js-tiktoken/lite';
 import type { TiktokenBPE } from 'js-tiktoken/lite';
 import o200k_base from 'js-tiktoken/ranks/o200k_base';
+<<<<<<< HEAD
 import type { MastraMessageV2 } from '../../agent/message-list';
 import type { TracingContext } from '../../ai-tracing/types';
 import type { RequestContext } from '../../request-context';
+=======
+import type { MastraDBMessage } from '../../agent/message-list';
+>>>>>>> origin/main
 import type { ChunkType } from '../../stream';
 import type { Processor } from '../index';
 
@@ -34,7 +38,8 @@ export interface TokenLimiterOptions {
  * Implements both processOutputStream for streaming and processOutputResult for non-streaming.
  */
 export class TokenLimiterProcessor implements Processor {
-  public readonly name = 'token-limiter';
+  public readonly id = 'token-limiter';
+  public readonly name = 'Token Limiter';
   private encoder: Tiktoken;
   private maxTokens: number;
   private currentTokens: number = 0;
@@ -273,10 +278,14 @@ export class TokenLimiterProcessor implements Processor {
    * Truncates the text content if it exceeds the token limit
    */
   async processOutputResult(args: {
-    messages: MastraMessageV2[];
+    messages: MastraDBMessage[];
     abort: (reason?: string) => never;
+<<<<<<< HEAD
   }): Promise<MastraMessageV2[]> {
     // Always process output results (this is the main/original functionality)
+=======
+  }): Promise<MastraDBMessage[]> {
+>>>>>>> origin/main
     const { messages, abort } = args;
     const limit = this.maxTokens;
 

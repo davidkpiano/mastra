@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { appendClientMessage, appendResponseMessages } from 'ai';
 import type { UIMessage, CoreMessage, Message } from 'ai';
 import { describe, expect, it } from 'vitest';
-import type { MastraMessageV2, UIMessageWithMetadata } from '../';
+import type { MastraDBMessage, UIMessageWithMetadata } from '../';
 import type { MastraMessageV1 } from '../../../memory';
 import { MessageList } from '../index';
 import type { AIV4Type, AIV5Type } from '../types';
@@ -111,8 +111,7 @@ describe('MessageList', () => {
       expect(list.get.all.aiV5.model()).toHaveLength(0);
       expect(list.get.all.aiV5.ui()).toHaveLength(0);
       expect(list.get.all.v1()).toHaveLength(0);
-      expect(list.get.all.v2()).toHaveLength(0);
-      expect(list.get.all.v3()).toHaveLength(0);
+      expect(list.get.all.db()).toHaveLength(0);
 
       list.add(
         {
@@ -131,8 +130,7 @@ describe('MessageList', () => {
       expect(list.get.all.aiV5.model()).toHaveLength(1);
       expect(list.get.all.aiV5.ui()).toHaveLength(1);
       expect(list.get.all.v1()).toHaveLength(1);
-      expect(list.get.all.v2()).toHaveLength(1);
-      expect(list.get.all.v3()).toHaveLength(1);
+      expect(list.get.all.db()).toHaveLength(1);
 
       expect(list.getSystemMessages(`memory`)).toHaveLength(1);
       expect(list.get.all.aiV4.prompt()).toHaveLength(2); // system message + user message
@@ -153,7 +151,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(input, 'input');
 
-      const messages = list.get.all.v2();
+      const messages = list.get.all.db();
       expect(messages.length).toBe(1);
 
       expect(messages[0]).toEqual({
@@ -167,7 +165,7 @@ describe('MessageList', () => {
         },
         threadId,
         resourceId,
-      } satisfies MastraMessageV2);
+      } satisfies MastraDBMessage);
     });
 
     it('should correctly convert and add a Vercel CoreMessage with string content', () => {
@@ -181,7 +179,7 @@ describe('MessageList', () => {
         resourceId,
       }).add(input, 'input');
 
-      const messages = list.get.all.v2();
+      const messages = list.get.all.db();
       expect(messages.length).toBe(1);
 
       expect(messages[0]).toEqual({
@@ -195,7 +193,7 @@ describe('MessageList', () => {
         },
         threadId,
         resourceId,
-      } satisfies MastraMessageV2);
+      } satisfies MastraDBMessage);
     });
 
     it('should correctly merge a tool result CoreMessage with the preceding assistant message', () => {
@@ -261,7 +259,7 @@ describe('MessageList', () => {
     it('should preserve tool args when restoring messages from database with toolInvocations', () => {
       // This test simulates messages being restored from the database where
       // toolInvocations might have empty args but parts have the correct args
-      const dbMessage: MastraMessageV2 = {
+      const dbMessage: MastraDBMessage = {
         id: 'db-msg-1',
         role: 'assistant',
         createdAt: new Date(),
@@ -296,7 +294,7 @@ describe('MessageList', () => {
       const list = new MessageList().add(dbMessage, 'memory');
 
       // Check that args are preserved in both parts and toolInvocations
-      const v2Messages = list.get.all.v2();
+      const v2Messages = list.get.all.db();
       expect(v2Messages).toHaveLength(1);
 
       // Check parts array has correct args and no duplicate entries
@@ -372,7 +370,7 @@ describe('MessageList', () => {
         .add(toolResultMessage, 'response');
 
       // Check that args are preserved in v2 messages (internal representation)
-      const v2Messages = list.get.all.v2();
+      const v2Messages = list.get.all.db();
       expect(v2Messages).toHaveLength(2);
 
       const assistantV2Message = v2Messages[1];
@@ -455,7 +453,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputV1Message, 'response');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: inputV1Message.id,
           role: inputV1Message.role,
@@ -478,7 +476,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -495,7 +493,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputV1Message, 'input');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: inputV1Message.id,
           role: inputV1Message.role,
@@ -507,7 +505,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -527,7 +525,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputCoreMessage, 'input');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'assistant',
@@ -550,7 +548,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -641,7 +639,7 @@ describe('MessageList', () => {
           resourceId,
         },
       ];
-      expect(new MessageList({ threadId, resourceId }).add(messageSequence, 'input').get.all.v2()).toEqual(
+      expect(new MessageList({ threadId, resourceId }).add(messageSequence, 'input').get.all.db()).toEqual(
         expected.map(m => ({ ...m, createdAt: expect.any(Date) })),
       );
 
@@ -706,7 +704,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputCoreMessage, 'input');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'assistant',
@@ -726,7 +724,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -741,7 +739,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputCoreMessage, 'input');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'user',
@@ -756,7 +754,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -777,7 +775,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputV1Message, 'response');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: inputV1Message.id,
           role: inputV1Message.role,
@@ -797,7 +795,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -817,7 +815,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputV1Message, 'input');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: inputV1Message.id,
           role: inputV1Message.role,
@@ -832,7 +830,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -868,7 +866,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(messageSequence, 'response');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'assistant',
@@ -922,7 +920,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -960,7 +958,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(messageSequence, 'response');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'user',
@@ -972,7 +970,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
         {
           id: expect.any(String), // Should be the ID of the first assistant message in the sequence
           role: 'assistant',
@@ -1018,7 +1016,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -1043,7 +1041,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputV1Message, 'memory');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: inputV1Message.id,
           role: inputV1Message.role,
@@ -1062,7 +1060,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -1082,7 +1080,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputCoreMessage, 'input');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'user',
@@ -1101,7 +1099,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -1123,7 +1121,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(input, 'input');
 
-      const messages = list.get.all.v2();
+      const messages = list.get.all.db();
       expect(messages.length).toBe(1);
 
       expect(messages[0]).toEqual({
@@ -1143,7 +1141,7 @@ describe('MessageList', () => {
         },
         threadId,
         resourceId,
-      } satisfies MastraMessageV2);
+      } satisfies MastraDBMessage);
     });
 
     it('should correctly convert and add a Vercel UIMessage with text and experimental_attachments', () => {
@@ -1164,7 +1162,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(input, 'input');
 
-      const messages = list.get.all.v2();
+      const messages = list.get.all.db();
       expect(messages.length).toBe(1);
 
       expect(messages[0]).toEqual({
@@ -1184,7 +1182,7 @@ describe('MessageList', () => {
         },
         threadId,
         resourceId,
-      } satisfies MastraMessageV2);
+      } satisfies MastraDBMessage);
     });
 
     it('should correctly handle a mixed sequence of Mastra V1 and Vercel UIMessages with tool calls and results', () => {
@@ -1236,7 +1234,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(messageSequence, 'response');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: userMsgV1.id,
           role: 'user',
@@ -1248,7 +1246,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
         {
           id: assistantMsgV1.id, // Should retain the original assistant message ID
           role: 'assistant',
@@ -1285,7 +1283,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -1324,7 +1322,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(messageSequence, 'response');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'user',
@@ -1336,7 +1334,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
         {
           id: expect.any(String), // Should be the ID of the first assistant message in the sequence
           role: 'assistant',
@@ -1371,7 +1369,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -1390,7 +1388,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputCoreMessage, 'input');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'user',
@@ -1409,7 +1407,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -1426,7 +1424,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputCoreMessage, 'memory');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'assistant',
@@ -1460,7 +1458,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -1505,7 +1503,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(messageSequence, 'response');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'user',
@@ -1517,7 +1515,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
         {
           id: expect.any(String), // Should be the ID of the first assistant message in the sequence
           role: 'assistant',
@@ -1571,7 +1569,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -1587,7 +1585,7 @@ describe('MessageList', () => {
 
       const list = new MessageList({ threadId, resourceId }).add(inputCoreMessage, 'memory');
 
-      expect(list.get.all.v2()).toEqual([
+      expect(list.get.all.db()).toEqual([
         {
           id: expect.any(String),
           role: 'assistant',
@@ -1611,7 +1609,7 @@ describe('MessageList', () => {
           },
           threadId,
           resourceId,
-        } satisfies MastraMessageV2,
+        } satisfies MastraDBMessage,
       ]);
     });
 
@@ -1988,7 +1986,7 @@ describe('MessageList', () => {
         expect(systemMessages[0]?.role).toBe('system');
         expect(systemMessages[0]?.content).toBe(systemMsgContent);
 
-        expect(list.get.all.v2().length).toBe(0); // Should not be in MastraMessageV2 list
+        expect(list.get.all.db().length).toBe(0); // Should not be in MastraDBMessage list
         expect(list.get.all.ui().length).toBe(0); // Should not be in UI messages
       });
 
@@ -2028,7 +2026,7 @@ describe('MessageList', () => {
         expect(systemMessages.find(m => m.content === 'System setup complete.')).toBeDefined();
         expect(systemMessages.find(m => m.content === 'Another system note.')).toBeDefined();
 
-        expect(list.get.all.v2().length).toBe(2); // user and assistant
+        expect(list.get.all.db().length).toBe(2); // user and assistant
         expect(list.get.all.ui().length).toBe(2); // user and assistant
       });
     });
@@ -2160,7 +2158,7 @@ describe('MessageList', () => {
         expect(systemMessages[0]?.content).toBe(agentInstructions);
 
         // Should have user messages
-        const userMessages = list.get.all.v2().filter(m => m.role === 'user');
+        const userMessages = list.get.all.db().filter(m => m.role === 'user');
         expect(userMessages.length).toBe(2);
       });
     });
@@ -2180,7 +2178,7 @@ describe('MessageList', () => {
         },
         threadId,
         resourceId,
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       const messageV2 = {
         ...latestMessage,
@@ -2194,13 +2192,13 @@ describe('MessageList', () => {
             },
           ],
         },
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       const list = new MessageList({ threadId, resourceId });
       list.add(latestMessage, 'memory');
       list.add(messageV2, 'response');
 
-      expect(list.get.all.v2()[0].content.parts).toEqual([
+      expect(list.get.all.db()[0].content.parts).toEqual([
         { type: 'step-start' },
         {
           type: 'tool-invocation',
@@ -2224,7 +2222,7 @@ describe('MessageList', () => {
         },
         threadId,
         resourceId,
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       const messageV2 = {
         ...latestMessage,
@@ -2239,13 +2237,13 @@ describe('MessageList', () => {
             },
           ],
         },
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       const list = new MessageList({ threadId, resourceId });
       list.add(latestMessage, 'memory');
       list.add(messageV2, 'response');
 
-      expect(list.get.all.v2()[0].content.parts).toEqual([
+      expect(list.get.all.db()[0].content.parts).toEqual([
         { type: 'step-start' },
         { type: 'text', text: 'Let me do this.' },
         {
@@ -2271,7 +2269,7 @@ describe('MessageList', () => {
         },
         threadId,
         resourceId,
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       const messageV2 = {
         ...latestMessage,
@@ -2285,13 +2283,13 @@ describe('MessageList', () => {
             },
           ],
         },
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       const list = new MessageList({ threadId, resourceId });
       list.add(latestMessage, 'memory');
       list.add(messageV2, 'response');
 
-      expect(list.get.all.v2()[0].content.parts).toEqual([
+      expect(list.get.all.db()[0].content.parts).toEqual([
         { type: 'step-start' },
         { type: 'text', text: 'Doing it.' },
         {
@@ -2315,7 +2313,7 @@ describe('MessageList', () => {
         },
         threadId,
         resourceId,
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       const messageV2 = {
         ...latestMessage,
@@ -2330,13 +2328,13 @@ describe('MessageList', () => {
             { type: 'tool-invocation', toolInvocation: { state: 'call', toolCallId: 'A', toolName: 'foo', args: {} } },
           ],
         },
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       const list = new MessageList({ threadId, resourceId });
       list.add(latestMessage, 'memory');
       list.add(messageV2, 'response');
 
-      expect(list.get.all.v2()[0].content.parts).toEqual([
+      expect(list.get.all.db()[0].content.parts).toEqual([
         { type: 'step-start' },
         { type: 'tool-invocation', toolInvocation: { state: 'call', toolCallId: 'A', toolName: 'foo', args: {} } },
         {
@@ -2363,7 +2361,7 @@ describe('MessageList', () => {
         },
         threadId,
         resourceId,
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       const messageV2 = {
         ...latestMessage,
@@ -2377,13 +2375,13 @@ describe('MessageList', () => {
             },
           ],
         },
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       const list = new MessageList({ threadId, resourceId });
       list.add(latestMessage, 'memory');
       list.add(messageV2, 'response');
 
-      expect(list.get.all.v2()[0].content.parts).toEqual([
+      expect(list.get.all.db()[0].content.parts).toEqual([
         { type: 'step-start' },
         { type: 'text', text: 'Old reasoning' },
         {
@@ -2400,16 +2398,16 @@ describe('MessageList', () => {
         content: { format: 2, parts: [], toolInvocations: [] },
         threadId,
         resourceId,
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
 
       // Step 1: Only text
       let list = new MessageList({ threadId, resourceId });
       let msg1 = {
         ...base,
         content: { ...base.content, parts: [{ type: 'step-start' }, { type: 'text', text: 'First...' }] },
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
       list.add(msg1, 'memory');
-      expect(list.get.all.v2()[0].content.parts).toEqual([{ type: 'step-start' }, { type: 'text', text: 'First...' }]);
+      expect(list.get.all.db()[0].content.parts).toEqual([{ type: 'step-start' }, { type: 'text', text: 'First...' }]);
 
       // Step 2: Add tool-invocation (call)
       let msg2 = {
@@ -2425,9 +2423,9 @@ describe('MessageList', () => {
             },
           ],
         },
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
       list.add(msg2, 'memory');
-      expect(list.get.all.v2()[0].content.parts).toEqual([
+      expect(list.get.all.db()[0].content.parts).toEqual([
         { type: 'step-start' },
         { type: 'text', text: 'First...' },
         { type: 'tool-invocation', toolInvocation: { state: 'call', toolCallId: 'call-5', toolName: 'foo', args: {} } },
@@ -2447,9 +2445,9 @@ describe('MessageList', () => {
             },
           ],
         },
-      } satisfies MastraMessageV2;
+      } satisfies MastraDBMessage;
       list.add(msg3, 'response');
-      expect(list.get.all.v2()[0].content.parts).toEqual([
+      expect(list.get.all.db()[0].content.parts).toEqual([
         { type: 'step-start' },
         { type: 'text', text: 'First...' },
         {
@@ -2534,7 +2532,7 @@ describe('MessageList', () => {
       expect(() => list.add(messageWithStringContent, 'input')).not.toThrow();
 
       // Verify the content remains as a JSON string (not parsed back to object)
-      const messages = list.get.all.v2();
+      const messages = list.get.all.db();
       expect(messages.length).toBe(1);
       expect(messages[0].content.content).toBe(JSON.stringify(inputData)); // Should stay as string
       expect(typeof messages[0].content.content).toBe('string'); // Should be a string, not an object
@@ -2553,7 +2551,7 @@ describe('MessageList', () => {
       expect(() => list.add(messageWithJSONString, 'input')).not.toThrow();
 
       // The content should stay as a string, not be parsed to an object
-      const messages = list.get.all.v2();
+      const messages = list.get.all.db();
       expect(messages[0].content.content).toBe('{"data": "value", "number": 42}'); // Should stay as string
       expect(typeof messages[0].content.content).toBe('string'); // Should be a string, not an object
       expect(messages[0].content.parts).toEqual([
@@ -2567,7 +2565,7 @@ describe('MessageList', () => {
 
   describe('toUIMessage filtering', () => {
     it('should filter out tool invocations with state="call" when converting to UIMessage', () => {
-      const messageWithCallState: MastraMessageV2 = {
+      const messageWithCallState: MastraDBMessage = {
         id: 'msg-1',
         role: 'assistant',
         createdAt: new Date(),
@@ -2629,7 +2627,7 @@ describe('MessageList', () => {
     });
 
     it('should preserve tool invocations with state="result" when converting to UIMessage', () => {
-      const messageWithResultState: MastraMessageV2 = {
+      const messageWithResultState: MastraDBMessage = {
         id: 'msg-2',
         role: 'assistant',
         createdAt: new Date(),
@@ -2720,7 +2718,7 @@ describe('MessageList', () => {
     });
 
     it('should filter out partial-call states and preserve only results', () => {
-      const messageWithMixedStates: MastraMessageV2 = {
+      const messageWithMixedStates: MastraDBMessage = {
         id: 'msg-3',
         role: 'assistant',
         createdAt: new Date(),
@@ -2793,7 +2791,7 @@ describe('MessageList', () => {
       const list = new MessageList({ threadId: 'test-thread', resourceId: 'test-resource' });
 
       // Assistant message with tool invocation in "call" state (as saved in DB)
-      const assistantCallMessage: MastraMessageV2 = {
+      const assistantCallMessage: MastraDBMessage = {
         id: 'msg-assistant-1',
         role: 'assistant',
         createdAt: new Date('2024-01-01T10:00:00'),
@@ -2858,7 +2856,7 @@ describe('MessageList', () => {
       expect(uiMessage.toolInvocations).toEqual([]);
 
       // Now test with a result state - should be preserved
-      const assistantResultMessage: MastraMessageV2 = {
+      const assistantResultMessage: MastraDBMessage = {
         id: 'msg-assistant-2',
         role: 'assistant',
         createdAt: new Date('2024-01-01T10:00:01'),
@@ -2918,14 +2916,14 @@ describe('MessageList', () => {
 
   describe('MessageList metadata support', () => {
     describe('existing v2 metadata support', () => {
-      it('should preserve metadata when adding MastraMessageV2', () => {
+      it('should preserve metadata when adding MastraDBMessage', () => {
         const metadata = {
           customField: 'custom value',
           context: [{ type: 'project', content: '', displayName: 'Project', path: './' }],
           anotherField: { nested: 'data' },
         };
 
-        const v2Message: MastraMessageV2 = {
+        const v2Message: MastraDBMessage = {
           id: 'v2-msg-metadata',
           role: 'user',
           content: {
@@ -2939,7 +2937,7 @@ describe('MessageList', () => {
         };
 
         const list = new MessageList({ threadId, resourceId }).add(v2Message, 'input');
-        const messages = list.get.all.v2();
+        const messages = list.get.all.db();
 
         expect(messages.length).toBe(1);
         expect(messages[0].content.metadata).toEqual(metadata);
@@ -2948,7 +2946,7 @@ describe('MessageList', () => {
       it('should preserve metadata through message transformations', () => {
         const metadata = { preserved: true, data: 'test' };
 
-        const v2Message: MastraMessageV2 = {
+        const v2Message: MastraDBMessage = {
           id: 'v2-msg-transform',
           role: 'assistant',
           content: {
@@ -2966,7 +2964,7 @@ describe('MessageList', () => {
         // Convert to UI and back to v2
         const uiMessages = list.get.all.ui();
         const newList = new MessageList({ threadId, resourceId }).add(uiMessages, 'response');
-        const v2Messages = newList.get.all.v2();
+        const v2Messages = newList.get.all.db();
 
         expect(v2Messages[0].content.metadata).toEqual(metadata);
       });
@@ -2990,7 +2988,7 @@ describe('MessageList', () => {
         };
 
         const list = new MessageList({ threadId, resourceId }).add(uiMessage, 'input');
-        const v2Messages = list.get.all.v2();
+        const v2Messages = list.get.all.db();
 
         expect(v2Messages.length).toBe(1);
         expect(v2Messages[0].content.metadata).toEqual(metadata);
@@ -3011,7 +3009,7 @@ describe('MessageList', () => {
         } as UIMessageWithMetadata & { context: string; customField: string };
 
         const list = new MessageList({ threadId, resourceId }).add(uiMessage, 'input');
-        const v2Messages = list.get.all.v2();
+        const v2Messages = list.get.all.db();
 
         expect(v2Messages.length).toBe(1);
         expect(v2Messages[0].content.metadata).toEqual({ preserved: true });
@@ -3030,7 +3028,7 @@ describe('MessageList', () => {
         };
 
         const list = new MessageList({ threadId, resourceId }).add(uiMessage, 'input');
-        const v2Messages = list.get.all.v2();
+        const v2Messages = list.get.all.db();
 
         expect(v2Messages.length).toBe(1);
         expect(v2Messages[0].content.metadata).toBeUndefined();
@@ -3048,7 +3046,7 @@ describe('MessageList', () => {
 
         const list = new MessageList({ threadId, resourceId });
         list.add(uiMessage, 'input');
-        const v2Messages = list.get.all.v2();
+        const v2Messages = list.get.all.db();
 
         expect(v2Messages.length).toBe(1);
         expect(v2Messages[0].content.metadata).toEqual({});
@@ -3076,8 +3074,8 @@ describe('MessageList', () => {
         const list1 = new MessageList({ threadId, resourceId }).add(uiMessageNull, 'input');
         const list2 = new MessageList({ threadId, resourceId }).add(uiMessageUndefined, 'input');
 
-        expect(list1.get.all.v2()[0].content.metadata).toBeUndefined();
-        expect(list2.get.all.v2()[0].content.metadata).toBeUndefined();
+        expect(list1.get.all.db()[0].content.metadata).toBeUndefined();
+        expect(list2.get.all.db()[0].content.metadata).toBeUndefined();
       });
 
       it('should preserve metadata for assistant UIMessage with tool invocations', () => {
@@ -3094,7 +3092,7 @@ describe('MessageList', () => {
         };
 
         const list = new MessageList({ threadId, resourceId }).add(uiMessage, 'response');
-        const v2Messages = list.get.all.v2();
+        const v2Messages = list.get.all.db();
 
         expect(v2Messages.length).toBe(1);
         expect(v2Messages[0].content.metadata).toEqual(metadata);
@@ -3134,7 +3132,7 @@ describe('MessageList', () => {
         list.add(assistantResponse, 'response');
 
         // Get final messages (what would be saved to memory)
-        const v2Messages = list.get.all.v2();
+        const v2Messages = list.get.all.db();
 
         // Verify user message metadata is preserved
         const savedUserMessage = v2Messages.find(m => m.id === 'user-msg-flow');
@@ -3173,7 +3171,7 @@ describe('MessageList', () => {
         list.add(onlookMessage, 'input');
 
         // Verify it's saved correctly as v2
-        const v2Messages = list.get.all.v2();
+        const v2Messages = list.get.all.db();
         expect(v2Messages[0].content.metadata).toEqual(onlookMessage.metadata);
 
         // Verify it roundtrips back to UI format
@@ -3218,7 +3216,7 @@ describe('MessageList', () => {
       messageList.add(messagesWithMetadata[1], 'response');
 
       // Get messages in v2 format (what would be saved to memory)
-      const v2Messages = messageList.get.all.v2();
+      const v2Messages = messageList.get.all.db();
 
       // Verify metadata is preserved in v2 format
       expect(v2Messages.length).toBe(2);
@@ -3266,7 +3264,7 @@ describe('MessageList', () => {
       });
 
       // Step 2: Add memory messages (from rememberMessages)
-      const memoryMessagesV2: MastraMessageV2[] = [
+      const memoryMessagesV2: MastraDBMessage[] = [
         {
           id: 'fbd2f506-90e6-4f52-8ba4-633abe9e8442',
           role: 'user',
@@ -3437,7 +3435,7 @@ describe('MessageList', () => {
       newList.add(v1MessagesWithSuffixes, 'memory');
 
       // Get the v2 messages to see how they're stored
-      const v2Messages = newList.get.all.v2();
+      const v2Messages = newList.get.all.db();
 
       // Check that all messages are preserved with their IDs
       expect(v2Messages.length).toBe(4);
@@ -3460,7 +3458,7 @@ describe('MessageList', () => {
 
       // Now if we try to convert these v2 messages that came from suffixed v1s
       // We need to check if we get double-suffixed IDs
-      const v2MessageWithToolAndText: MastraMessageV2 = {
+      const v2MessageWithToolAndText: MastraDBMessage = {
         id: 'msg-2',
         role: 'assistant',
         createdAt: new Date(),

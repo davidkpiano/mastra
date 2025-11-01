@@ -197,6 +197,7 @@ const agent = new Agent({
 
 By default, memory processors run first for input processing. This means:
 
+<<<<<<< HEAD
 - Messages are saved to memory first
 - Then utility processors like `ToolCallFilter` and `TokenLimiter` filter what goes to the LLM
 - This is usually what you want - full conversation history in memory, filtered context for the LLM
@@ -214,6 +215,11 @@ import { Memory } from "@mastra/memory";
 import { ContentModerationProcessor } from "./guardrails";
 import { TokenLimiter } from "@mastra/core/processors";
 import { openai } from "@ai-sdk/openai";
+=======
+```typescript copy showLineNumbers {5-20,24-27}
+import { Memory, MemoryProcessorOpts, MemoryProcessor } from "@mastra/memory";
+import { CoreMessage } from "@mastra/core/llm";
+>>>>>>> origin/main
 
 const memory = new Memory({
   lastMessages: 10,

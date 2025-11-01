@@ -1,4 +1,4 @@
-import type { MastraMessageV2, MessageList } from '../agent/message-list';
+import type { MastraDBMessage, MessageList } from '../agent/message-list';
 import { TripWire } from '../agent/trip-wire';
 import { AISpanType } from '../ai-tracing';
 import type { AISpan, TracingContext } from '../ai-tracing';
@@ -81,6 +81,7 @@ export class ProcessorRunner {
     this.agentName = agentName;
   }
 
+<<<<<<< HEAD
   async runOutputProcessors(
     messageList: MessageList,
     tracingContext?: TracingContext,
@@ -88,10 +89,18 @@ export class ProcessorRunner {
     runtimeContext?: RequestContext,
   ): Promise<MessageList> {
     const responseMessages = messageList.clear.response.v2();
+=======
+  async runOutputProcessors(messageList: MessageList, tracingContext?: TracingContext): Promise<MessageList> {
+    const responseMessages = messageList.clear.response.db();
+>>>>>>> origin/main
 
-    let processableMessages: MastraMessageV2[] = [...responseMessages];
+    let processableMessages: MastraDBMessage[] = [...responseMessages];
 
+<<<<<<< HEAD
     const ctx: { messages: MastraMessageV2[]; abort: () => never; runtimeContext?: RequestContext } = {
+=======
+    const ctx: { messages: MastraDBMessage[]; abort: () => never } = {
+>>>>>>> origin/main
       messages: processableMessages,
       abort: () => {
         throw new TripWire('Tripwire triggered');
@@ -101,7 +110,7 @@ export class ProcessorRunner {
 
     for (const [index, processor] of this.outputProcessors.entries()) {
       const abort = (reason?: string): never => {
-        throw new TripWire(reason || `Tripwire triggered by ${processor.name}`);
+        throw new TripWire(reason || `Tripwire triggered by ${processor.id}`);
       };
 
       ctx.abort = abort;
@@ -118,9 +127,9 @@ export class ProcessorRunner {
       const parentSpan = currentSpan?.findParent(AISpanType.AGENT_RUN) || currentSpan?.parent || currentSpan;
       const processorSpan = parentSpan?.createChildSpan({
         type: AISpanType.PROCESSOR_RUN,
-        name: `output processor: ${processor.name}`,
+        name: `output processor: ${processor.id}`,
         attributes: {
-          processorName: processor.name,
+          processorName: processor.name ?? processor.id,
           processorType: 'output',
           processorIndex: index,
         },
@@ -190,14 +199,14 @@ export class ProcessorRunner {
         try {
           if (processor.processOutputStream && processedPart) {
             // Get or create state for this processor
-            let state = processorStates.get(processor.name);
+            let state = processorStates.get(processor.id);
             if (!state) {
               state = new ProcessorState<OUTPUT>({
-                processorName: processor.name,
+                processorName: processor.name ?? processor.id,
                 tracingContext,
                 processorIndex: index,
               });
-              processorStates.set(processor.name, state);
+              processorStates.set(processor.id, state);
             }
 
             // Add the current part to accumulated text
@@ -208,7 +217,7 @@ export class ProcessorRunner {
               streamParts: state.streamParts as ChunkType[],
               state: state.customState,
               abort: (reason?: string) => {
-                throw new TripWire(reason || `Stream part blocked by ${processor.name}`);
+                throw new TripWire(reason || `Stream part blocked by ${processor.id}`);
               },
               tracingContext: { currentSpan: state.span },
               runtimeContext,
@@ -224,17 +233,17 @@ export class ProcessorRunner {
         } catch (error) {
           if (error instanceof TripWire) {
             // End span with blocked metadata
-            const state = processorStates.get(processor.name);
+            const state = processorStates.get(processor.id);
             state?.span?.end({
               metadata: { blocked: true, reason: error.message },
             });
             return { part: null, blocked: true, reason: error.message };
           }
           // End span with error
-          const state = processorStates.get(processor.name);
+          const state = processorStates.get(processor.id);
           state?.span?.error({ error: error as Error, endSpan: true });
           // Log error but continue with original part
-          this.logger.error(`[Agent:${this.agentName}] - Output processor ${processor.name} failed:`, error);
+          this.logger.error(`[Agent:${this.agentName}] - Output processor ${processor.id} failed:`, error);
         }
       }
 
@@ -317,6 +326,7 @@ export class ProcessorRunner {
     });
   }
 
+<<<<<<< HEAD
   async runInputProcessors(
     messageList: MessageList,
     tracingContext?: TracingContext,
@@ -325,10 +335,18 @@ export class ProcessorRunner {
   ): Promise<MessageList> {
     // Get input messages without clearing yet
     const userMessages = messageList.get.input.v2();
+=======
+  async runInputProcessors(messageList: MessageList, tracingContext?: TracingContext): Promise<MessageList> {
+    const userMessages = messageList.clear.input.db();
+>>>>>>> origin/main
 
-    let processableMessages: MastraMessageV2[] = [...userMessages];
+    let processableMessages: MastraDBMessage[] = [...userMessages];
 
+<<<<<<< HEAD
     const ctx: { messages: MastraMessageV2[]; abort: () => never; runtimeContext?: RequestContext } = {
+=======
+    const ctx: { messages: MastraDBMessage[]; abort: () => never } = {
+>>>>>>> origin/main
       messages: processableMessages,
       abort: () => {
         throw new TripWire('Tripwire triggered');
@@ -338,7 +356,7 @@ export class ProcessorRunner {
 
     for (const [index, processor] of this.inputProcessors.entries()) {
       const abort = (reason?: string): never => {
-        throw new TripWire(reason || `Tripwire triggered by ${processor.name}`);
+        throw new TripWire(reason || `Tripwire triggered by ${processor.id}`);
       };
 
       ctx.abort = abort;
@@ -355,9 +373,9 @@ export class ProcessorRunner {
       const parentSpan = currentSpan?.findParent(AISpanType.AGENT_RUN) || currentSpan?.parent || currentSpan;
       const processorSpan = parentSpan?.createChildSpan({
         type: AISpanType.PROCESSOR_RUN,
-        name: `input processor: ${processor.name}`,
+        name: `input processor: ${processor.id}`,
         attributes: {
-          processorName: processor.name,
+          processorName: processor.name ?? processor.id,
           processorType: 'input',
           processorIndex: index,
         },

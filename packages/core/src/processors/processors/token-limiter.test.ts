@@ -1,14 +1,18 @@
 import type { TextPart } from 'ai';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+<<<<<<< HEAD
 
 import type { MastraMessageV2 } from '../../agent/message-list';
 import { RequestContext } from '../../request-context';
+=======
+import type { MastraDBMessage } from '../../agent/message-list';
+>>>>>>> origin/main
 import type { ChunkType } from '../../stream';
 import { ChunkFrom } from '../../stream/types';
 
 import { TokenLimiterProcessor } from './token-limiter';
 
-function createTestMessage(text: string, role: 'user' | 'assistant' = 'assistant', id = 'test-id'): MastraMessageV2 {
+function createTestMessage(text: string, role: 'user' | 'assistant' = 'assistant', id = 'test-id'): MastraDBMessage {
   return {
     id,
     role,

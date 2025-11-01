@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 export * from './agent/index.warning';
 export * from './base.warning';
 export * from './deployer/index.warning';
@@ -15,3 +16,6 @@ export * from './utils';
 export * from './vector/index.warning';
 export * from './workflows/index.warning';
 export * from './hooks';
+=======
+export { Mastra, type Config } from './mastra';
+>>>>>>> origin/main

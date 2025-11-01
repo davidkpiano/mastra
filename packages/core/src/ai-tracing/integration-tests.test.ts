@@ -6,7 +6,7 @@ import { z } from 'zod';
 // Core Mastra imports
 import { Agent } from '../agent';
 import type { StructuredOutputOptions } from '../agent';
-import type { MastraMessageV2 } from '../agent/message-list';
+import type { MastraDBMessage } from '../agent/message-list';
 import { Mastra } from '../mastra';
 import type { Processor } from '../processors';
 import { MockStore } from '../storage/mock';
@@ -1503,7 +1503,8 @@ describe('AI Tracing Integration Tests', () => {
       it('should trace all processor spans including internal agent spans', async () => {
         // Create a custom input processor that uses an agent internally
         class ValidatorProcessor implements Processor {
-          readonly name = 'validator';
+          readonly id = 'validator';
+          readonly name = 'Validator';
           private agent: Agent;
 
           constructor(model: any) {
@@ -1515,10 +1516,10 @@ describe('AI Tracing Integration Tests', () => {
           }
 
           async processInput(args: {
-            messages: MastraMessageV2[];
+            messages: MastraDBMessage[];
             abort: (reason?: string) => never;
             tracingContext?: TracingContext;
-          }): Promise<MastraMessageV2[]> {
+          }): Promise<MastraDBMessage[]> {
             // Call the internal agent to validate
             const lastMessage = args.messages[args.messages.length - 1];
             const text = lastMessage?.content?.content || '';
@@ -1534,7 +1535,8 @@ describe('AI Tracing Integration Tests', () => {
 
         // Create a custom output processor that uses an agent internally
         class SummarizerProcessor implements Processor {
-          readonly name = 'summarizer';
+          readonly id = 'summarizer';
+          readonly name = 'Summarizer';
           private agent: Agent;
 
           constructor(model: any) {
@@ -1546,10 +1548,10 @@ describe('AI Tracing Integration Tests', () => {
           }
 
           async processOutputResult(args: {
-            messages: MastraMessageV2[];
+            messages: MastraDBMessage[];
             abort: (reason?: string) => never;
             tracingContext?: TracingContext;
-          }): Promise<MastraMessageV2[]> {
+          }): Promise<MastraDBMessage[]> {
             // Call the internal agent to summarize
             const lastMessage = args.messages[args.messages.length - 1];
             const text = lastMessage?.content?.content || '';
