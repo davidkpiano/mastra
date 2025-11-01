@@ -14,6 +14,7 @@ export interface Processor {
     messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
+    runtimeContext?: RequestContext;
 }): Promise<MastraDBMessage[]> | MastraDBMessage[];
 
   /**
@@ -37,6 +38,7 @@ export interface Processor {
     messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
+    runtimeContext?: RequestContext;
 }): Promise<MastraDBMessage[]> | MastraDBMessage[];
 }
 

@@ -336,9 +336,9 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
     outputProcessorOverrides?: OutputProcessor[];
   }): Promise<ProcessorRunner> {
     // Use overrides if provided, otherwise use resolved processors (which include memory processors)
-    const inputProcessors = inputProcessorOverrides ?? (await this.getResolvedInputProcessors(requestContext));
+    const inputProcessors = inputProcessorOverrides ?? (await this.listResolvedInputProcessors(requestContext));
 
-    const outputProcessors = outputProcessorOverrides ?? (await this.getResolvedOutputProcessors(requestContext));
+    const outputProcessors = outputProcessorOverrides ?? (await this.listResolvedOutputProcessors(requestContext));
 
     this.logger.debug('outputProcessors', outputProcessors);
 
@@ -1286,7 +1286,7 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
     let tripwireReason = '';
 
     // Get resolved processors (includes memory processors)
-    const resolvedProcessors = await this.getResolvedInputProcessors(requestContext);
+    const resolvedProcessors = await this.listResolvedInputProcessors(requestContext);
 
     // Only run if we have processors (either overrides or resolved)
     if (inputProcessorOverrides?.length || resolvedProcessors.length) {
@@ -1344,7 +1344,7 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
     let tripwireReason = '';
 
     // Get resolved processors (includes memory processors)
-    const resolvedProcessors = await this.getResolvedOutputProcessors(requestContext);
+    const resolvedProcessors = await this.listResolvedOutputProcessors(requestContext);
 
     // Only run if we have processors (either overrides or resolved)
     if (outputProcessorOverrides?.length || resolvedProcessors.length) {

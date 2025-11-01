@@ -68,11 +68,11 @@ export class TokenLimiterProcessor implements Processor {
    * prioritizing the most recent messages.
    */
   async processInput(args: {
-    messages: MastraMessageV2[];
+    messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
     runtimeContext?: RequestContext;
-  }): Promise<MastraMessageV2[]> {
+  }): Promise<MastraDBMessage[]> {
     const { messages } = args;
     const limit = this.maxTokens;
 
@@ -100,7 +100,7 @@ export class TokenLimiterProcessor implements Processor {
     const remainingBudget = limit - systemTokens;
 
     // Process non-system messages in reverse order (newest first)
-    const result: MastraMessageV2[] = [];
+    const result: MastraDBMessage[] = [];
     let currentTokens = 0;
 
     // Iterate through messages in reverse to prioritize recent messages
@@ -124,7 +124,7 @@ export class TokenLimiterProcessor implements Processor {
   /**
    * Count tokens for an input message, including overhead for message structure
    */
-  private countInputMessageTokens(message: MastraMessageV2): number {
+  private countInputMessageTokens(message: MastraDBMessage): number {
     let tokenString = message.role;
     let overhead = 0;
 
@@ -177,7 +177,7 @@ export class TokenLimiterProcessor implements Processor {
     }
 
     // Add message formatting overhead for non-tool messages
-    const hasNonToolParts = !message.content?.parts || message.content.parts.some(p => p.type !== 'tool-invocation');
+    const hasNonToolParts = !message.content?.parts || message.content.parts.some((p: any) => p.type !== 'tool-invocation');
 
     if (typeof message.content === 'string' || hasNonToolParts) {
       overhead += TokenLimiterProcessor.TOKENS_PER_MESSAGE;

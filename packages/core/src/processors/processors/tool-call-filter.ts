@@ -1,4 +1,4 @@
-import type { MastraMessageV2 } from '../../agent/message-list';
+import type { MastraDBMessage } from '../../agent/message-list';
 import type { RequestContext } from '../../request-context';
 
 import type { InputProcessor } from '../index';
@@ -9,6 +9,7 @@ import type { InputProcessor } from '../index';
  * Can be configured to exclude only specific tools by name.
  */
 export class ToolCallFilter implements InputProcessor {
+  readonly id = 'tool-call-filter';
   name = 'ToolCallFilter';
   private exclude: string[] | 'all';
 
@@ -28,24 +29,24 @@ export class ToolCallFilter implements InputProcessor {
   }
 
   async processInput(args: {
-    messages: MastraMessageV2[];
+    messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     runtimeContext?: RequestContext;
-  }): Promise<MastraMessageV2[]> {
+  }): Promise<MastraDBMessage[]> {
     const { messages } = args;
 
     // Helper to check if a message has tool invocations
-    const hasToolInvocations = (message: MastraMessageV2): boolean => {
+    const hasToolInvocations = (message: MastraDBMessage): boolean => {
       if (typeof message.content === 'string') return false;
       if (!message.content?.parts) return false;
       return message.content.parts.some(part => part.type === 'tool-invocation');
     };
 
     // Helper to get tool invocations from a message
-    const getToolInvocations = (message: MastraMessageV2) => {
+    const getToolInvocations = (message: MastraDBMessage) => {
       if (typeof message.content === 'string') return [];
       if (!message.content?.parts) return [];
-      return message.content.parts.filter(part => part.type === 'tool-invocation');
+      return message.content.parts.filter((part: any) => part.type === 'tool-invocation');
     };
 
     // Case 1: Exclude all tool calls and tool results

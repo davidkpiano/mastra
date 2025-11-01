@@ -401,7 +401,7 @@ const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: R
       const nonSystemMessages = processableMessages.filter(m => m.role !== 'system');
 
       // Clear the original input messages before adding processed ones
-      messageList.clear.input.v2();
+      messageList.clear.input.db();
 
       // Add system messages using addSystem
       for (const sysMsg of systemMessages) {

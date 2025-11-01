@@ -1,4 +1,4 @@
-import type { MastraMessageV2 } from '../../agent/index.js';
+import type { MastraDBMessage } from '../../agent/index.js';
 import type { TracingContext } from '../../ai-tracing/index.js';
 import { parseMemoryRuntimeContext } from '../../memory/types.js';
 import type { RequestContext } from '../../request-context/index.js';
@@ -23,6 +23,7 @@ export interface MessageHistoryOptions {
  * making it decoupled from memory-specific context.
  */
 export class MessageHistory implements Processor {
+  readonly id = 'message-history';
   readonly name = 'MessageHistory';
   private storage: MemoryStorage;
   private lastMessages?: number;
@@ -35,11 +36,11 @@ export class MessageHistory implements Processor {
   }
 
   async processInput(args: {
-    messages: MastraMessageV2[];
+    messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
     runtimeContext?: RequestContext;
-  }): Promise<MastraMessageV2[]> {
+  }): Promise<MastraDBMessage[]> {
     const { messages } = args;
 
     // Get memory context from RequestContext
@@ -51,17 +52,16 @@ export class MessageHistory implements Processor {
     }
 
     try {
-      // 1. Fetch historical messages from storage (as V2 format)
-      const historicalMessages = await this.storage.getMessages({
+      // 1. Fetch historical messages from storage (as DB format)
+      const result = await this.storage.getMessages({
         threadId,
         selectBy: {
           last: this.lastMessages,
         },
-        format: 'v2',
       });
 
       // 2. Filter based on includeSystemMessages option
-      const filteredMessages = historicalMessages.filter(msg => this.includeSystemMessages || msg.role !== 'system');
+      const filteredMessages = result.messages.filter(msg => this.includeSystemMessages || msg.role !== 'system');
 
       // 3. Merge with incoming messages (avoiding duplicates by ID)
       const messageIds = new Set(messages.map(m => m.id).filter(Boolean));
@@ -75,11 +75,11 @@ export class MessageHistory implements Processor {
   }
 
   async processOutputResult(args: {
-    messages: MastraMessageV2[];
+    messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
     runtimeContext?: RequestContext;
-  }): Promise<MastraMessageV2[]> {
+  }): Promise<MastraDBMessage[]> {
     const { messages } = args;
 
     // Get memory context from RequestContext
@@ -107,16 +107,14 @@ export class MessageHistory implements Processor {
       // 3. Save to storage
       await this.storage.saveMessages({
         messages: messagesWithIds,
-        format: 'v2',
       });
 
       // 4. Update thread metadata
       try {
         const thread = await this.storage.getThreadById({ threadId });
         if (thread) {
-          const allMessages = await this.storage.getMessages({
+          const result = await this.storage.getMessages({
             threadId,
-            format: 'v2',
           });
 
           await this.storage.updateThread({
@@ -126,7 +124,7 @@ export class MessageHistory implements Processor {
               ...thread.metadata,
               updatedAt: new Date(),
               lastMessageAt: new Date(),
-              messageCount: allMessages?.length || 0,
+              messageCount: result.messages.length || 0,
             },
           });
         }

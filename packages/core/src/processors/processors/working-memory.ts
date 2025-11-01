@@ -1,5 +1,5 @@
 import { parseMemoryRuntimeContext } from '../../memory/types';
-import type { MastraMessageV2 } from '../../memory/types';
+import type { MastraDBMessage } from '../../memory/types';
 import type { RequestContext } from '../../request-context';
 import type { MemoryStorage } from '../../storage/domains/memory/base';
 import type { InputProcessor } from '../index';
@@ -27,6 +27,7 @@ export interface WorkingMemoryConfig {
  * not through this processor. The tool is provided by the Memory class.
  */
 export class WorkingMemory implements InputProcessor {
+  readonly id = 'working-memory';
   name = 'WorkingMemory';
 
   private defaultWorkingMemoryTemplate = `# Working Memory
@@ -51,10 +52,10 @@ export class WorkingMemory implements InputProcessor {
   ) {}
 
   async processInput(args: {
-    messages: MastraMessageV2[];
+    messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     runtimeContext?: RequestContext;
-  }): Promise<MastraMessageV2[]> {
+  }): Promise<MastraDBMessage[]> {
     const { messages, runtimeContext } = args;
 
     // Get threadId and resourceId from runtime context
@@ -96,7 +97,7 @@ export class WorkingMemory implements InputProcessor {
         : this.getWorkingMemoryToolInstruction({ template, data: workingMemoryData });
 
       // Create system message with working memory instruction
-      const workingMemoryMessage: MastraMessageV2 = {
+      const workingMemoryMessage: MastraDBMessage = {
         id: `working-memory-${Date.now()}`,
         role: 'system',
         content: {

@@ -1,8 +1,6 @@
-import type { CoreMessage } from 'ai';
-
 import type { TracingContext } from '../../ai-tracing/types';
 import { parseMemoryRuntimeContext } from '../../memory/types';
-import type { MastraMessageV2 } from '../../memory/types';
+import type { MastraDBMessage } from '../../memory/types';
 import type { RequestContext } from '../../request-context';
 import type { MemoryStorage } from '../../storage/domains/memory/base';
 import type { MastraEmbeddingModel, MastraVector } from '../../vector';
@@ -88,6 +86,7 @@ export interface SemanticRecallOptions {
  * ```
  */
 export class SemanticRecall implements Processor {
+  readonly id = 'semantic-recall';
   readonly name = 'SemanticRecall';
 
   private storage: MemoryStorage;
@@ -125,11 +124,11 @@ export class SemanticRecall implements Processor {
   }
 
   async processInput(args: {
-    messages: MastraMessageV2[];
+    messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
     runtimeContext?: RequestContext;
-  }): Promise<MastraMessageV2[]> {
+  }): Promise<MastraDBMessage[]> {
     const { messages, runtimeContext } = args;
 
     // Get memory context from RequestContext
@@ -203,9 +202,9 @@ export class SemanticRecall implements Processor {
   /**
    * Format cross-thread messages as a system message with timestamps and labels
    */
-  private formatCrossThreadMessages(messages: MastraMessageV2[]): MastraMessageV2 {
+  private formatCrossThreadMessages(messages: MastraDBMessage[]): MastraDBMessage {
     // Group messages by date
-    const messagesByDate = new Map<string, MastraMessageV2[]>();
+    const messagesByDate = new Map<string, MastraDBMessage[]>();
 
     for (const msg of messages) {
       const date = msg.createdAt ? new Date(msg.createdAt).toLocaleDateString() : 'Unknown Date';
@@ -253,7 +252,7 @@ ${formattedSections.join('\n')}
   /**
    * Extract the user query from messages for semantic search
    */
-  private extractUserQuery(messages: MastraMessageV2[]): string | null {
+  private extractUserQuery(messages: MastraDBMessage[]): string | null {
     // Find the last user message
     for (let i = messages.length - 1; i >= 0; i--) {
       const msg = messages[i];
@@ -294,7 +293,7 @@ ${formattedSections.join('\n')}
     query: string;
     threadId: string;
     resourceId?: string;
-  }): Promise<MastraMessageV2[]> {
+  }): Promise<MastraDBMessage[]> {
     // Generate embeddings for the query
     const { embeddings, dimension } = await this.embedMessageContent(query);
 
@@ -329,10 +328,9 @@ ${formattedSections.join('\n')}
     }
 
     // Retrieve messages with context
-    const messages = await this.storage.getMessages({
+    const result = await this.storage.getMessages({
       threadId,
       resourceId,
-      format: 'v2',
       selectBy: {
         include: filteredResults.map(r => ({
           id: r.metadata?.message_id,
@@ -343,7 +341,7 @@ ${formattedSections.join('\n')}
       },
     });
 
-    return messages;
+    return result.messages;
   }
 
   /**
@@ -399,11 +397,11 @@ ${formattedSections.join('\n')}
    * This allows semantic recall to index new messages for future retrieval
    */
   async processOutputResult(args: {
-    messages: MastraMessageV2[];
+    messages: MastraDBMessage[];
     abort: (reason?: string) => never;
     tracingContext?: TracingContext;
     runtimeContext?: RequestContext;
-  }): Promise<MastraMessageV2[]> {
+  }): Promise<MastraDBMessage[]> {
     const { messages, runtimeContext } = args;
 
     if (!this.vector || !this.embedder || !this.storage) {
@@ -493,9 +491,9 @@ ${formattedSections.join('\n')}
   }
 
   /**
-   * Extract text content from a MastraMessageV2
+   * Extract text content from a MastraDBMessage
    */
-  private extractTextContent(message: MastraMessageV2): string {
+  private extractTextContent(message: MastraDBMessage): string {
     if (typeof message.content === 'string') {
       return message.content;
     }
@@ -513,28 +511,6 @@ ${formattedSections.join('\n')}
           .map(part => part.text || '')
           .join(' ');
       }
-    }
-
-    return '';
-  }
-
-  /**
-   * Convert CoreMessage to string for embedding
-   */
-  private coreMessageToString(message: CoreMessage): string {
-    if (typeof message.content === 'string') {
-      return message.content;
-    }
-
-    if (Array.isArray(message.content)) {
-      return message.content
-        .map((part: Extract<CoreMessage['content'], Array<any>>[number]) => {
-          if (part.type === 'text') {
-            return part.text;
-          }
-          return '';
-        })
-        .join(' ');
     }
 
     return '';
