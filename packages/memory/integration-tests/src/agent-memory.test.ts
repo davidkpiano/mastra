@@ -20,6 +20,7 @@ describe('Agent Memory Tests', () => {
 
   it(`inherits storage from Mastra instance`, async () => {
     const agent = new Agent({
+      id: 'test-agent',
       name: 'test',
       instructions: '',
       model: openai('gpt-4o-mini'),
@@ -50,6 +51,7 @@ describe('Agent Memory Tests', () => {
       }),
       agents: {
         testAgent: new Agent({
+          id: 'test-agent',
           name: 'Test Agent',
           instructions: 'You are a test agent',
           model: openai('gpt-4o-mini'),
@@ -100,6 +102,7 @@ describe('Agent Memory Tests', () => {
       }),
       agents: {
         testAgent: new Agent({
+          id: 'test-agent',
           name: 'Test Agent',
           instructions: 'You are a test agent',
           model: openai('gpt-4o-mini'),
@@ -154,6 +157,7 @@ describe('Agent Memory Tests', () => {
       vectors: { default: vector },
       agents: {
         testAgent: new Agent({
+          id: 'test-agent',
           name: 'Test Agent',
           instructions: 'You are a helpful assistant',
           model: openai('gpt-4o-mini'),
@@ -258,6 +262,7 @@ describe('Agent Memory Tests', () => {
       embedder: fastembed,
     });
     const agent = new Agent({
+      id: 'test-agent',
       name: 'test',
       instructions:
         'You are a weather agent. When asked about weather in any city, use the get_weather tool with the city name as the postal code.',
@@ -469,6 +474,7 @@ describe('Agent Memory Tests', () => {
       embedder: fastembed,
     });
     const agentWithTitle = new Agent({
+      id: 'title-on',
       name: 'title-on',
       instructions: 'Test agent with generateTitle on.',
       model: openai('gpt-4o'),
@@ -477,6 +483,7 @@ describe('Agent Memory Tests', () => {
     });
 
     const agentWithDynamicModelTitle = new Agent({
+      id: 'title-on',
       name: 'title-on',
       instructions: 'Test agent with generateTitle on.',
       model: ({ requestContext }) => openai(requestContext.get('model') as string),
@@ -496,6 +503,7 @@ describe('Agent Memory Tests', () => {
       embedder: fastembed,
     });
     const agentNoTitle = new Agent({
+      id: 'title-off',
       name: 'title-off',
       instructions: 'Test agent with generateTitle off.',
       model: openai('gpt-4o'),
@@ -627,6 +635,7 @@ describe('Agent memory test gemini', () => {
   });
 
   const agent = new Agent({
+    id: 'gemini-agent',
     name: 'gemini-agent',
     instructions:
       'You are a weather agent. When asked about weather in any city, use the get_weather tool with the city name.',
