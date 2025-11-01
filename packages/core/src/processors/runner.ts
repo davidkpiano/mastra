@@ -323,7 +323,8 @@ export class ProcessorRunner {
     telemetry?: any,
     runtimeContext?: RequestContext,
   ): Promise<MessageList> {
-    const userMessages = messageList.clear.input.v2();
+    // Get input messages without clearing yet
+    const userMessages = messageList.get.input.v2();
 
     let processableMessages: MastraMessageV2[] = [...userMessages];
 
@@ -399,6 +400,9 @@ export class ProcessorRunner {
       const systemMessages = processableMessages.filter(m => m.role === 'system');
       const nonSystemMessages = processableMessages.filter(m => m.role !== 'system');
 
+      // Clear the original input messages before adding processed ones
+      messageList.clear.input.v2();
+
       // Add system messages using addSystem
       for (const sysMsg of systemMessages) {
         messageList.addSystem(
@@ -408,8 +412,18 @@ export class ProcessorRunner {
       }
 
       // Add non-system messages normally
+      // We need to add them one by one to ensure they're all added to newUserMessages
+      // even if they already exist in the messages array (e.g., historical messages)
       if (nonSystemMessages.length > 0) {
-        messageList.add(nonSystemMessages, 'input');
+        for (const msg of nonSystemMessages) {
+          // Remove the message from the messages array if it exists
+          const existingIndex = messageList['messages'].findIndex(m => m.id === msg.id);
+          if (existingIndex !== -1) {
+            messageList['messages'].splice(existingIndex, 1);
+          }
+          // Now add it fresh, which will add it to newUserMessages
+          messageList.add([msg], 'input');
+        }
       }
     }
 

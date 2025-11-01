@@ -415,7 +415,9 @@ export class MessageList {
       this.cleanV3Metadata(
         this.messages.filter(m => this.newUserMessages.has(m)).map(this.mastraMessageV2ToMastraMessageV3),
       ),
-    v2: () => this.messages.filter(m => this.newUserMessages.has(m)),
+    v2: () => {
+      return this.messages.filter(m => this.newUserMessages.has(m));
+    },
     v1: () => convertToV1Messages(this.input.v2()),
 
     aiV5: {
@@ -698,9 +700,11 @@ export class MessageList {
     return AIV4.convertToCoreMessages(this.sanitizeAIV4UIMessages(messages));
   }
   private sanitizeAIV4UIMessages(messages: AIV4Type.UIMessage[]): AIV4Type.UIMessage[] {
-    const msgs = messages
+    return messages
       .map(m => {
-        if (m.parts.length === 0) return false;
+        if (m.parts.length === 0) {
+          return false;
+        }
         const safeParts = m.parts.filter(
           p =>
             p.type !== `tool-invocation` ||
@@ -710,7 +714,9 @@ export class MessageList {
         );
 
         // fully remove this message if it has an empty parts array after stripping out incomplete tool calls.
-        if (!safeParts.length) return false;
+        if (!safeParts.length) {
+          return false;
+        }
 
         const sanitized = {
           ...m,
@@ -725,7 +731,6 @@ export class MessageList {
         return sanitized;
       })
       .filter((m): m is AIV4Type.UIMessage => Boolean(m));
-    return msgs;
   }
 
   /**
@@ -857,6 +862,11 @@ export class MessageList {
     if (parts.length === 0 && experimentalAttachments.length > 0) {
       // make sure we have atleast one part so this message doesn't get removed when converting to core message
       parts.push({ type: 'text', text: '' });
+    }
+
+    // If parts is still empty but we have content, add it as a text part
+    if (parts.length === 0 && contentString) {
+      parts.push({ type: 'text', text: contentString });
     }
 
     if (m.role === `user`) {

@@ -1284,7 +1284,7 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
 
     // Get resolved processors (includes memory processors)
     const resolvedProcessors = await this.getResolvedInputProcessors(requestContext);
-    
+
     // Only run if we have processors (either overrides or resolved)
     if (inputProcessorOverrides?.length || resolvedProcessors.length) {
       const runner = await this.getProcessorRunner({
@@ -1342,7 +1342,7 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
 
     // Get resolved processors (includes memory processors)
     const resolvedProcessors = await this.getResolvedOutputProcessors(requestContext);
-    
+
     // Only run if we have processors (either overrides or resolved)
     if (outputProcessorOverrides?.length || resolvedProcessors.length) {
       const runner = await this.getProcessorRunner({
@@ -2212,6 +2212,13 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
             saveThread: false,
           });
         }
+
+        // Set memory context in RequestContext for processors to access
+        requestContext.set('MastraMemory', {
+          thread: threadObject,
+          resourceId,
+          memoryConfig,
+        });
 
         // Add new user messages to message list
         messageList.add(messages, 'input');

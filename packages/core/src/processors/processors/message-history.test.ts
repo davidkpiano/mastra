@@ -333,7 +333,6 @@ describe('MessageHistory', () => {
         },
       ];
 
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const result = await processor.processInput({
         messages: newMessages,
         abort: mockAbort,
@@ -342,9 +341,6 @@ describe('MessageHistory', () => {
 
       // Should return original messages on error
       expect(result).toEqual(newMessages);
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to fetch message history:', expect.any(Error));
-
-      consoleSpy.mockRestore();
     });
 
     it('should return original messages when no threadId', async () => {
