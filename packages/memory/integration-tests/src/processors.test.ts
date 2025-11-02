@@ -98,10 +98,10 @@ describe('Memory with Processors', () => {
       selectBy: { last: 20 },
     });
     const messageList = new MessageList({ threadId: thread.id, resourceId }).add(queryResult.messages, 'memory');
-    const coreMessages = messageList.get.all.core();
+    const dbMessages = messageList.get.all.db();
     const tokenLimiter = new TokenLimiter(250); // Limit to 250 tokens
     const result = await tokenLimiter.processInput({
-      messages: coreMessages,
+      messages: dbMessages,
       abort: () => {
         throw new Error('Aborted');
       },
@@ -135,7 +135,7 @@ describe('Memory with Processors', () => {
     const allMessagesResult = await tokenLimiter2.processInput({
       messages: new MessageList({ threadId: thread.id, resourceId })
         .add(allMessagesQuery.messages, 'memory')
-        .get.all.core(),
+        .get.all.db(),
       abort: () => {
         throw new Error('Aborted');
       },
@@ -485,9 +485,13 @@ describe('Memory with Processors', () => {
       selectBy: { last: 20 },
     });
     const list2 = new MessageList({ threadId }).add(weatherQueryResult.messages, 'memory');
-    const weatherFilteredResult = await memory.processMessages({
-      messages: list2.get.all.core(),
-      processors: [new ToolCallFilter({ exclude: ['get_weather'] })],
+    const weatherFilter = new ToolCallFilter({ exclude: ['get_weather'] });
+    const weatherFilteredResult = await weatherFilter.processInput({
+      messages: list2.get.all.db(),
+      abort: () => {
+        throw new Error('Aborted');
+      },
+      runtimeContext: new RequestContext(),
     });
 
     // Should have fewer messages after filtering

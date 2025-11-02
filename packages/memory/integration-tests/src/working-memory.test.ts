@@ -9,7 +9,6 @@ import type { MastraMessageV1 } from '@mastra/core/memory';
 import { fastembed } from '@mastra/fastembed';
 import { LibSQLVector, LibSQLStore } from '@mastra/libsql';
 import { Memory } from '@mastra/memory';
-import type { ToolCallPart } from 'ai';
 import { config } from 'dotenv';
 import type { JSONSchema7 } from 'json-schema';
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
@@ -426,13 +425,13 @@ describe('Working Memory Tests', () => {
       const saved = await memory.saveMessages({ messages: messages as MastraMessageV1[] });
 
       // Should not include any updateWorkingMemory tool-call messages (pure or mixed)
+      // In MastraDBMessage format, tool calls are in content.parts with type 'tool-invocation'
       expect(
         saved.messages.some(
           m =>
-            (m.type === 'tool-call' || m.type === 'tool-result') &&
             Array.isArray(m.content.parts) &&
             m.content.parts.some(
-              c => c.type === 'tool-invocation' && c.toolInvocation.toolName === `updateWorkingMemory`,
+              (part: any) => part.type === 'tool-invocation' && part.toolInvocation?.toolName === `updateWorkingMemory`,
             ),
         ),
       ).toBe(false);
@@ -443,15 +442,6 @@ describe('Working Memory Tests', () => {
         assistantMessages.every(m => {
           return JSON.stringify(m).includes(`updateWorkingMemory`);
         }),
-      ).toBe(false);
-      // working memory should not be present
-      expect(
-        saved.messages.some(
-          m =>
-            (m.type === 'tool-call' || m.type === 'tool-result') &&
-            Array.isArray(m.content) &&
-            m.content.some(c => (c as ToolCallPart).toolName === 'updateWorkingMemory'),
-        ),
       ).toBe(false);
 
       // TODO: again seems like we're getting V1 here but types say V2
