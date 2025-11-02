@@ -312,7 +312,6 @@ export async function getMessagesPaginatedHandler({
   threadId,
   resourceId,
   selectBy,
-  format,
 }: StorageGetMessagesArg & Pick<MemoryContext, 'mastra'>) {
   try {
     validateBody({ threadId });
@@ -329,7 +328,7 @@ export async function getMessagesPaginatedHandler({
       throw new HTTPException(404, { message: 'Thread not found' });
     }
 
-    const result = await storage.getMessagesPaginated({ threadId: threadId!, resourceId, selectBy, format });
+    const result = await storage.getMessagesPaginated({ threadId: threadId!, resourceId, selectBy });
     return result;
   } catch (error) {
     return handleError(error, 'Error getting messages');

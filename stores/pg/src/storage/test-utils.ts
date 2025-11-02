@@ -459,7 +459,6 @@ export function pgTests() {
         // Test getMessagesPaginated
         const messagesPaginated = await store.getMessagesPaginated({
           threadId: testThreadId,
-          format: 'v2',
         });
         expect(messagesPaginated.messages.length).toBe(1);
         expect(messagesPaginated.messages[0]?.createdAt).toBeInstanceOf(Date);

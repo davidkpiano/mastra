@@ -83,8 +83,7 @@ describe('Agent Memory Tests', () => {
     await memory!.updateWorkingMemory({
       threadId: thread.id,
       resourceId: 'test-resource',
-      workingMemory: '# Test Working Memory
-- Name: Test User',
+      workingMemory: '# Test Working Memory\n- Name: Test User',
     });
 
     // Should be able to retrieve working memory
@@ -93,8 +92,7 @@ describe('Agent Memory Tests', () => {
       resourceId: 'test-resource',
     });
 
-    expect(workingMemoryData).toBe('# Test Working Memory
-- Name: Test User');
+    expect(workingMemoryData).toBe('# Test Working Memory\\n- Name: Test User');
   });
 
   it('should work with resource-scoped working memory when storage supports it', async () => {
@@ -135,8 +133,7 @@ describe('Agent Memory Tests', () => {
     await memory!.updateWorkingMemory({
       threadId: thread.id,
       resourceId: 'test-resource',
-      workingMemory: '# Resource Memory
-- Shared across threads',
+      workingMemory: '# Resource Memory\\n- Shared across threads',
     });
 
     const workingMemoryData = await memory!.getWorkingMemory({
@@ -144,8 +141,7 @@ describe('Agent Memory Tests', () => {
       resourceId: 'test-resource',
     });
 
-    expect(workingMemoryData).toBe('# Resource Memory
-- Shared across threads');
+    expect(workingMemoryData).toBe('# Resource Memory\\n- Shared across threads');
   });
 
   it('should call getMemoryMessages for first message in new thread when using resource-scoped semantic recall', async () => {
