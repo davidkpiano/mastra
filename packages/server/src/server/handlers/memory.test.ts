@@ -1060,7 +1060,6 @@ describe('Memory Handlers', () => {
         mastra,
         threadId: 'test-thread',
         resourceId: 'test-resource',
-        format: 'v1',
       });
 
       expect(result).toEqual(mockResult);
@@ -1069,7 +1068,6 @@ describe('Memory Handlers', () => {
         threadId: 'test-thread',
         resourceId: 'test-resource',
         selectBy: undefined,
-        format: 'v1',
       });
     });
   });
