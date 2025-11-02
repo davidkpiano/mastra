@@ -244,10 +244,7 @@ describe('SemanticRecall', () => {
       ]);
 
       vi.mocked(mockStorage.getMessages).mockResolvedValue({
-        messages: [
-          createTestMessage('msg-1', 'user', 'Message 1'),
-          createTestMessage('msg-3', 'user', 'Message 3'),
-        ],
+        messages: [createTestMessage('msg-1', 'user', 'Message 1'), createTestMessage('msg-3', 'user', 'Message 3')],
       });
 
       const result = await processor.processInput({
@@ -592,7 +589,9 @@ describe('SemanticRecall', () => {
         { id: 'vec-1', score: 0.95, metadata: { message_id: 'msg-1', thread_id: 'thread-1' } },
       ]);
 
-      vi.mocked(mockStorage.getMessages).mockResolvedValue({ messages: [createTestMessage('msg-1', 'user', 'Message 1')] });
+      vi.mocked(mockStorage.getMessages).mockResolvedValue({
+        messages: [createTestMessage('msg-1', 'user', 'Message 1')],
+      });
 
       await processor.processInput({
         messages: inputMessages,
@@ -756,11 +755,7 @@ describe('SemanticRecall', () => {
       ]);
 
       vi.mocked(mockStorage.getMessages).mockResolvedValue({
-        messages: [
-          crossThreadMessage1,
-          crossThreadMessage2,
-          sameThreadMessage,
-        ],
+        messages: [crossThreadMessage1, crossThreadMessage2, sameThreadMessage],
       });
 
       const result = await processor.processInput({

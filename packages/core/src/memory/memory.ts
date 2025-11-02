@@ -280,7 +280,7 @@ https://mastra.ai/en/docs/memory/overview`,
    * @param messages The messages to process
    * @returns The processed messages
    */
-abstract rememberMessages(args: {
+  abstract rememberMessages(args: {
     threadId: string;
     resourceId?: string;
     vectorMessageSearch?: string;

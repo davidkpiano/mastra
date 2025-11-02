@@ -177,7 +177,8 @@ export class TokenLimiterProcessor implements Processor {
     }
 
     // Add message formatting overhead for non-tool messages
-    const hasNonToolParts = !message.content?.parts || message.content.parts.some((p: any) => p.type !== 'tool-invocation');
+    const hasNonToolParts =
+      !message.content?.parts || message.content.parts.some((p: any) => p.type !== 'tool-invocation');
 
     if (typeof message.content === 'string' || hasNonToolParts) {
       overhead += TokenLimiterProcessor.TOKENS_PER_MESSAGE;

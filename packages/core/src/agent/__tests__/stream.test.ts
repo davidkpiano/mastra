@@ -931,11 +931,20 @@ function runStreamTest(version: 'v1' | 'v2') {
         const requestInput = secondResponse.request.body.input;
         expect(requestInput).toEqual([
           expect.objectContaining({ role: 'system' }),
-          expect.objectContaining({ role: 'user', content: expect.arrayContaining([expect.objectContaining({ type: 'input_text' })]) }),
+          expect.objectContaining({
+            role: 'user',
+            content: expect.arrayContaining([expect.objectContaining({ type: 'input_text' })]),
+          }),
           expect.objectContaining({ type: 'function_call', name: 'get_weather' }),
           expect.objectContaining({ type: 'function_call_output' }),
-          expect.objectContaining({ role: 'assistant', content: expect.arrayContaining([expect.objectContaining({ type: 'output_text' })]) }),
-          expect.objectContaining({ role: 'user', content: expect.arrayContaining([expect.objectContaining({ type: 'input_text' })]) }),
+          expect.objectContaining({
+            role: 'assistant',
+            content: expect.arrayContaining([expect.objectContaining({ type: 'output_text' })]),
+          }),
+          expect.objectContaining({
+            role: 'user',
+            content: expect.arrayContaining([expect.objectContaining({ type: 'input_text' })]),
+          }),
         ]);
       }
 

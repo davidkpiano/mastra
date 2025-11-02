@@ -159,7 +159,7 @@ describe('Agent - network', () => {
     for await (const _chunk of anStream) {
       // console.log(chunk);
     }
-    
+
     // Ensure stream is fully consumed
     await anStream.usage;
   });

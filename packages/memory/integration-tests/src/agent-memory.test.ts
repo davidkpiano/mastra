@@ -197,7 +197,7 @@ describe('Agent Memory Tests', () => {
 
     // Now create a second thread - this should be able to access memory from thread1
     // due to resource scope, even on the first message
-const thread2Id = randomUUID();
+    const thread2Id = randomUUID();
 
     const secondResponse = await agent.generateLegacy('What did we discuss about cats?', {
       memory: {
@@ -206,7 +206,7 @@ const thread2Id = randomUUID();
       },
     });
 
-// Verify that the agent was able to access cross-thread memory
+    // Verify that the agent was able to access cross-thread memory
     // by checking that the response references the previous conversation
     expect(secondResponse.text.toLowerCase()).toMatch(/(cat|animal|discuss)/);
 

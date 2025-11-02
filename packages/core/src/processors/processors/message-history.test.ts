@@ -480,7 +480,10 @@ describe('MessageHistory', () => {
         },
         {
           role: 'tool',
-          content: { format: 2, parts: [{ type: 'tool-result', toolCallId: 'tool-1', toolName: 'search', result: 'Tool result' }] },
+          content: {
+            format: 2,
+            parts: [{ type: 'tool-result', toolCallId: 'tool-1', toolName: 'search', result: 'Tool result' }],
+          },
           id: 'msg-4',
         },
       ];
@@ -494,10 +497,34 @@ describe('MessageHistory', () => {
       expect(result).toEqual(messages);
       expect(mockStorage.saveMessages).toHaveBeenCalledWith({
         messages: expect.arrayContaining([
-          expect.objectContaining({ role: 'user', content: expect.objectContaining({ format: 2, parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'Hello' })]) }) }),
-          expect.objectContaining({ role: 'assistant', content: expect.objectContaining({ format: 2, parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'Hi there!' })]) }) }),
-          expect.objectContaining({ role: 'assistant', content: expect.objectContaining({ format: 2, parts: expect.arrayContaining([expect.objectContaining({ type: 'tool-call' })]) }) }),
-          expect.objectContaining({ role: 'tool', content: expect.objectContaining({ format: 2, parts: expect.arrayContaining([expect.objectContaining({ type: 'tool-result', result: 'Tool result' })]) }) }),
+          expect.objectContaining({
+            role: 'user',
+            content: expect.objectContaining({
+              format: 2,
+              parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'Hello' })]),
+            }),
+          }),
+          expect.objectContaining({
+            role: 'assistant',
+            content: expect.objectContaining({
+              format: 2,
+              parts: expect.arrayContaining([expect.objectContaining({ type: 'text', text: 'Hi there!' })]),
+            }),
+          }),
+          expect.objectContaining({
+            role: 'assistant',
+            content: expect.objectContaining({
+              format: 2,
+              parts: expect.arrayContaining([expect.objectContaining({ type: 'tool-call' })]),
+            }),
+          }),
+          expect.objectContaining({
+            role: 'tool',
+            content: expect.objectContaining({
+              format: 2,
+              parts: expect.arrayContaining([expect.objectContaining({ type: 'tool-result', result: 'Tool result' })]),
+            }),
+          }),
         ]),
       });
       // System message should NOT be saved
@@ -557,7 +584,9 @@ describe('MessageHistory', () => {
         storage: mockStorage,
       });
 
-      const messages: MastraDBMessage[] = [{ role: 'user', content: { format: 2, parts: [{ type: 'text', text: 'Hello' }] } }];
+      const messages: MastraDBMessage[] = [
+        { role: 'user', content: { format: 2, parts: [{ type: 'text', text: 'Hello' }] } },
+      ];
 
       await processor.processOutputResult({
         messages,

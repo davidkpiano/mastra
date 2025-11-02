@@ -81,7 +81,7 @@ export class ProcessorRunner {
     this.agentName = agentName;
   }
 
-async runOutputProcessors(
+  async runOutputProcessors(
     messageList: MessageList,
     tracingContext?: TracingContext,
     telemetry?: any,
@@ -91,7 +91,7 @@ async runOutputProcessors(
 
     let processableMessages: MastraDBMessage[] = [...responseMessages];
 
-const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: RequestContext } = {
+    const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: RequestContext } = {
       messages: processableMessages,
       abort: () => {
         throw new TripWire('Tripwire triggered');
@@ -328,7 +328,7 @@ const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: R
 
     let processableMessages: MastraDBMessage[] = [...originalUserMessages];
 
-const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: RequestContext } = {
+    const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: RequestContext } = {
       messages: processableMessages,
       abort: () => {
         throw new TripWire('Tripwire triggered');
@@ -424,11 +424,11 @@ const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: R
           if (existingIndex !== -1) {
             messageList['messages'].splice(existingIndex, 1);
           }
-          
+
           // Determine the correct source based on whether this was an original message
           const isOriginalMessage = msg.id && originalMessageIds.has(msg.id);
           const source = isOriginalMessage ? 'input' : 'memory';
-          
+
           messageList.add([msg], source);
         }
       }
