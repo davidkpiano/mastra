@@ -8,7 +8,7 @@ import { Agent, MessageList } from '@mastra/core/agent';
 import type { CoreMessage } from '@mastra/core/llm';
 import type { MemoryProcessorOpts } from '@mastra/core/memory';
 import { MemoryProcessor } from '@mastra/core/memory';
-import { RequestContext } from '@mastra/core/processors';
+import { RequestContext } from '@mastra/core/request-context';
 import { createTool } from '@mastra/core/tools';
 import { fastembed } from '@mastra/fastembed';
 import { LibSQLVector, LibSQLStore } from '@mastra/libsql';
