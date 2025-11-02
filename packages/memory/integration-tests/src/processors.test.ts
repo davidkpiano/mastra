@@ -8,6 +8,7 @@ import { Agent, MessageList } from '@mastra/core/agent';
 import type { CoreMessage } from '@mastra/core/llm';
 import type { MemoryProcessorOpts } from '@mastra/core/memory';
 import { MemoryProcessor } from '@mastra/core/memory';
+import { RequestContext } from '@mastra/core/processors';
 import { createTool } from '@mastra/core/tools';
 import { fastembed } from '@mastra/fastembed';
 import { LibSQLVector, LibSQLStore } from '@mastra/libsql';
@@ -98,9 +99,13 @@ describe('Memory with Processors', () => {
     });
     const messageList = new MessageList({ threadId: thread.id, resourceId }).add(queryResult.messages, 'memory');
     const coreMessages = messageList.get.all.core();
-    const result = await memory.processMessages({
+    const tokenLimiter = new TokenLimiter(250); // Limit to 250 tokens
+    const result = await tokenLimiter.processInput({
       messages: coreMessages,
-      processors: [new TokenLimiter(250)], // Limit to 250 tokens
+      abort: () => {
+        throw new Error('Aborted');
+      },
+      runtimeContext: new RequestContext(),
     });
 
     // We should have messages limited by token count
@@ -126,11 +131,15 @@ describe('Memory with Processors', () => {
     });
     expect(allMessagesQuery.messages.length).toBe(20);
 
-    const allMessagesResult = await memory.processMessages({
+    const tokenLimiter2 = new TokenLimiter(3000); // High limit that should exceed total tokens
+    const allMessagesResult = await tokenLimiter2.processInput({
       messages: new MessageList({ threadId: thread.id, resourceId })
         .add(allMessagesQuery.messages, 'memory')
         .get.all.core(),
-      processors: [new TokenLimiter(3000)], // High limit that should exceed total tokens
+      abort: () => {
+        throw new Error('Aborted');
+      },
+      runtimeContext: new RequestContext(),
     });
 
     // create response message list to add to memory
@@ -170,9 +179,13 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result = await memory.processMessages({
+    const toolCallFilter = new ToolCallFilter({ exclude: ['weather'] });
+    const result = await toolCallFilter.processInput({
       messages: v2ToCoreMessages(queryResult.messages),
-      processors: [new ToolCallFilter({ exclude: ['weather'] })],
+      abort: () => {
+        throw new Error('Aborted');
+      },
+      runtimeContext: new RequestContext(),
     });
     const messages = new MessageList({ threadId: thread.id, resourceId }).add(result, 'response').get.all.db();
     expect(new MessageList().add(messages, 'memory').get.all.db().length).toBeLessThan(messagesV2.length);
@@ -186,10 +199,7 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result2 = await memory.processMessages({
-      messages: v2ToCoreMessages(queryResult2.messages),
-      processors: [],
-    });
+    const result2 = v2ToCoreMessages(queryResult2.messages);
     const messages2 = new MessageList({ threadId: thread.id, resourceId }).add(result2, 'response').get.all.db();
     expect(new MessageList().add(messages2, 'memory').get.all.db()).toHaveLength(messagesV2.length);
     expect(filterToolCallsByName(result2, 'weather')).toHaveLength(1);
@@ -202,9 +212,13 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result3 = await memory.processMessages({
+    const toolCallFilter2 = new ToolCallFilter({ exclude: ['weather', 'calculator'] });
+    const result3 = await toolCallFilter2.processInput({
       messages: v2ToCoreMessages(queryResult3.messages),
-      processors: [new ToolCallFilter({ exclude: ['weather', 'calculator'] })],
+      abort: () => {
+        throw new Error('Aborted');
+      },
+      runtimeContext: new RequestContext(),
     });
     expect(result3.length).toBeLessThan(messagesV2.length);
     expect(filterToolCallsByName(result3, 'weather')).toHaveLength(0);
@@ -217,9 +231,13 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result4 = await memory.processMessages({
+    const toolCallFilter3 = new ToolCallFilter();
+    const result4 = await toolCallFilter3.processInput({
       messages: v2ToCoreMessages(queryResult4.messages),
-      processors: [new ToolCallFilter()],
+      abort: () => {
+        throw new Error('Aborted');
+      },
+      runtimeContext: new RequestContext(),
     });
     expect(result4.length).toBeLessThan(messagesV2.length);
     expect(filterToolCallsByName(result4, 'weather')).toHaveLength(0);
@@ -252,9 +270,21 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result = await memory.processMessages({
+    const toolCallFilter = new ToolCallFilter({ exclude: ['weather'] });
+    const tokenLimiter = new TokenLimiter(250);
+    let result = await toolCallFilter.processInput({
       messages: v2ToCoreMessages(queryResult.messages),
-      processors: [new ToolCallFilter({ exclude: ['weather'] }), new TokenLimiter(250)],
+      abort: () => {
+        throw new Error('Aborted');
+      },
+      runtimeContext: new RequestContext(),
+    });
+    result = await tokenLimiter.processInput({
+      messages: result,
+      abort: () => {
+        throw new Error('Aborted');
+      },
+      runtimeContext: new RequestContext(),
     });
 
     // We should have fewer messages after filtering and token limiting
@@ -437,11 +467,8 @@ describe('Memory with Processors', () => {
 
     const list = new MessageList({ threadId }).add(queryResult.messages, 'memory');
 
-    const baselineResult = await memory.processMessages({
-      messages: list.get.remembered.core(),
-      newMessages: list.get.input.core(),
-      processors: [],
-    });
+    // No processors, just get the messages
+    const baselineResult = list.get.remembered.core();
 
     // There should be at least 6 messages (3 user + 3 assistant responses)
     expect(baselineResult.length).toBeGreaterThanOrEqual(6);
@@ -547,10 +574,8 @@ describe('Memory with Processors', () => {
       selectBy: { last: 1 },
     });
 
-    // Retrieve the message (no TokenLimiter, just get the message back)
-    const result = await memory.processMessages({
-      messages: v2ToCoreMessages(queryResult.messages),
-    });
+    // Retrieve the message (no processors, just convert to core messages)
+    const result = v2ToCoreMessages(queryResult.messages);
 
     // Should have retrieved the message
     expect(result.length).toBe(1);

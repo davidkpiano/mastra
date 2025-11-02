@@ -12,7 +12,7 @@ import { createTool } from '@mastra/core/tools';
 import { fastembed } from '@mastra/fastembed';
 import { LibSQLVector, LibSQLStore } from '@mastra/libsql';
 import { Memory } from '@mastra/memory';
-import { TokenLimiter, ToolCallFilter } from '@mastra/memory/processors';
+import { TokenLimiter, ToolCallFilter, RequestContext } from '@mastra/memory/processors';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { filterToolCallsByName, filterToolResultsByName, generateConversationHistory } from './test-utils';
@@ -79,9 +79,11 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result = await memory.processMessages({
+    const tokenLimiter = new TokenLimiter(250);
+    const result = await tokenLimiter.processInput({
       messages: new MessageList({ threadId: thread.id, resourceId }).add(queryResult.messages, 'memory').get.all.core(),
-      processors: [new TokenLimiter(250)], // Limit to 250 tokens
+      abort: new AbortController().signal,
+      runtimeContext: new RequestContext(),
     });
 
     // We should have messages limited by token count
@@ -151,9 +153,11 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result = await memory.processMessages({
+    const toolCallFilter = new ToolCallFilter({ exclude: ['weather'] });
+    const result = await toolCallFilter.processInput({
       messages: v2ToCoreMessages(queryResult.messages),
-      processors: [new ToolCallFilter({ exclude: ['weather'] })],
+      abort: new AbortController().signal,
+      runtimeContext: new RequestContext(),
     });
     const messages = new MessageList({ threadId: thread.id, resourceId }).add(result, 'response').get.all.db();
     expect(new MessageList().add(messages, 'memory').get.all.db().length).toBeLessThan(messagesV2.length);
@@ -167,10 +171,8 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result2 = await memory.processMessages({
-      messages: v2ToCoreMessages(queryResult2.messages),
-      processors: [],
-    });
+    // No processors, just convert to core messages
+    const result2 = v2ToCoreMessages(queryResult2.messages);
     const messages2 = new MessageList({ threadId: thread.id, resourceId }).add(result2, 'response').get.all.db();
     expect(new MessageList().add(messages2, 'memory').get.all.db()).toHaveLength(messagesV2.length);
     expect(filterToolCallsByName(result2, 'weather')).toHaveLength(1);
