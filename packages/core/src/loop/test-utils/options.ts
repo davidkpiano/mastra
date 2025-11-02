@@ -448,6 +448,15 @@ export function optionsTests({ loopFn, runId }: { loopFn: typeof loop; runId: st
                   ],
                   "role": "tool",
                 },
+                {
+                  "content": [
+                    {
+                      "text": "thinking",
+                      "type": "text",
+                    },
+                  ],
+                  "role": "assistant",
+                },
               ],
               "toolChoice": {
                 "type": "auto",
@@ -1522,26 +1531,26 @@ export function optionsTests({ loopFn, runId }: { loopFn: typeof loop; runId: st
                 "type": "tool",
               },
               "tools": [
-                {
-                  "description": undefined,
-                  "inputSchema": {
-                    "$schema": "http://json-schema.org/draft-07/schema#",
-                    "additionalProperties": false,
-                    "properties": {
-                      "value": {
-                        "type": "string",
-                      },
-                    },
-                    "required": [
-                      "value",
-                    ],
-                    "type": "object",
+            {
+              "description": undefined,
+              "inputSchema": {
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
                   },
-                  "name": "tool1",
-                  "providerOptions": undefined,
-                  "type": "function",
                 },
-              ],
+                "required": [
+                  "value",
+                ],
+                "type": "object",
+              },
+              "name": "tool1",
+              "providerOptions": undefined,
+              "type": "function",
+            },
+          ],
               "topK": undefined,
               "topP": undefined,
             },

@@ -72,11 +72,23 @@ export class ToolCallFilter implements InputProcessor {
         let shouldExclude = false;
 
         for (const part of toolInvocations) {
-          const invocation = part.toolInvocation;
-
+          // MastraDBMessage parts use type: 'tool-invocation' with nested toolInvocation property
+          type V2ToolInvocationPart = {
+            type: 'tool-invocation';
+            toolInvocation: {
+              toolName: string;
+              toolCallId: string;
+              args: unknown;
+              result?: unknown;
+              state: 'call' | 'result';
+            };
+          };
+          const invocationPart = part as unknown as V2ToolInvocationPart;
+          const invocation = invocationPart.toolInvocation;
+          
           // Check if this is a tool call (not a result) and if it's in the exclude list
           if (
-            (invocation.state === 'call' || invocation.state === 'partial-call') &&
+            invocation.state === 'call' &&
             this.exclude.includes(invocation.toolName)
           ) {
             excludedToolCallIds.add(invocation.toolCallId);

@@ -5,7 +5,7 @@ import type { LanguageModelV2 } from '@ai-sdk/provider-v5';
 import type { ToolInvocationUIPart } from '@ai-sdk/ui-utils';
 import type { LanguageModelV1 } from '@internal/ai-sdk-v4/model';
 import { MockLanguageModelV1 } from '@internal/ai-sdk-v4/test';
-import { MockLanguageModelV2 } from 'ai-v5/test';
+import { MockLanguageModelV2, convertArrayToReadableStream } from 'ai-v5/test';
 import { config } from 'dotenv';
 import { describe, expect, it, vi } from 'vitest';
 import z from 'zod';
@@ -737,7 +737,11 @@ function runStreamTest(version: 'v1' | 'v2') {
           {
             id: 'hist-msg-1',
             role: `user`,
-            content: { content: `hello!`, parts: [] },
+            content: {
+              format: 2,
+              content: `hello!`,
+              parts: [{ type: 'text', text: 'hello!' }],
+            },
             threadId,
             resourceId,
             createdAt: new Date(),
@@ -745,7 +749,11 @@ function runStreamTest(version: 'v1' | 'v2') {
           {
             id: 'hist-msg-2',
             role: 'assistant',
-            content: { content: 'hi, how are you?', parts: [] },
+            content: {
+              format: 2,
+              content: 'hi, how are you?',
+              parts: [{ type: 'text', text: 'hi, how are you?' }],
+            },
             threadId,
             resourceId,
             createdAt: new Date(),
@@ -795,26 +803,23 @@ function runStreamTest(version: 'v1' | 'v2') {
       let request;
       if (version === 'v1') {
         request = JSON.parse((await result.request).body).messages;
-        // Expect 3 messages: 2 system messages (instructions + remembered), 1 user message
-        expect(request).toHaveLength(3);
+        // Expect 4 messages: 1 system (instructions), 2 historical (user + assistant), 1 current user
+        expect(request).toHaveLength(4);
         expect(request[0].role).toBe('system');
         expect(request[0].content).toBe('test!');
-        expect(request[1].role).toBe('system');
-        expect(request[1].content).toContain('remembered from a different conversation');
-        expect(request[1].content).toContain('hello!');
-        expect(request[1].content).toContain('hi, how are you?');
-        expect(request[2]).toEqual({ role: 'user', content: "I'm good, how are you?" });
+        expect(request[1]).toEqual({ role: 'user', content: 'hello!' });
+        expect(request[2]).toEqual({ role: 'assistant', content: 'hi, how are you?' });
+        expect(request[3]).toEqual({ role: 'user', content: "I'm good, how are you?" });
       } else {
-        request = (await result.request).body.input;
-        // Expect 3 messages: 2 system messages (instructions + remembered), 1 user message
-        expect(request).toHaveLength(3);
+        const fullRequest = await result.request;
+        request = fullRequest.body.input;
+        // Expect 4 messages: 1 system (instructions), 2 historical (user + assistant), 1 current user
+        expect(request).toHaveLength(4);
         expect(request[0].role).toBe('system');
         expect(request[0].content).toBe('test!');
-        expect(request[1].role).toBe('system');
-        expect(request[1].content).toContain('remembered from a different conversation');
-        expect(request[1].content).toContain('hello!');
-        expect(request[1].content).toContain('hi, how are you?');
-        expect(request[2]).toEqual({ role: 'user', content: [{ type: 'input_text', text: "I'm good, how are you?" }] });
+        expect(request[1]).toEqual({ role: 'user', content: [{ type: 'input_text', text: 'hello!' }] });
+        expect(request[2]).toEqual({ role: 'assistant', content: [{ type: 'output_text', text: 'hi, how are you?' }] });
+        expect(request[3]).toEqual({ role: 'user', content: [{ type: 'input_text', text: "I'm good, how are you?" }] });
       }
     });
 
@@ -920,26 +925,17 @@ function runStreamTest(version: 'v1' | 'v2') {
           },
         });
 
-        // request.body.input contains the actual API request format (OpenAI's function_call format)
-        // not the AI SDK v5 abstraction (tool-call format)
-        // Note: There are duplicate function_call messages in the request
-        expect(secondResponse.request.body.input).toEqual([
+        // request.body.input contains the UI message format
+        // with input_text/output_text for user/assistant messages
+        // and function_call/function_call_output for tool calls/results
+        const requestInput = secondResponse.request.body.input;
+        expect(requestInput).toEqual([
           expect.objectContaining({ role: 'system' }),
-          expect.objectContaining({ role: 'user' }),
-          expect.objectContaining({
-            type: 'function_call',
-            name: 'get_weather',
-          }),
-          expect.objectContaining({
-            type: 'function_call',
-            name: 'get_weather',
-          }),
-          expect.objectContaining({
-            type: 'function_call_output',
-            call_id: expect.any(String),
-          }),
-          expect.objectContaining({ role: 'assistant' }),
-          expect.objectContaining({ role: 'user' }),
+          expect.objectContaining({ role: 'user', content: expect.arrayContaining([expect.objectContaining({ type: 'input_text' })]) }),
+          expect.objectContaining({ type: 'function_call', name: 'get_weather' }),
+          expect.objectContaining({ type: 'function_call_output' }),
+          expect.objectContaining({ role: 'assistant', content: expect.arrayContaining([expect.objectContaining({ type: 'output_text' })]) }),
+          expect.objectContaining({ role: 'user', content: expect.arrayContaining([expect.objectContaining({ type: 'input_text' })]) }),
         ]);
       }
 

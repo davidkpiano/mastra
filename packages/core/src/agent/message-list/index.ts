@@ -266,8 +266,15 @@ export class MessageList {
     v1: (): MastraMessageV1[] => convertToV1Messages(this.all.db()),
 
     aiV5: {
-      model: (): AIV5Type.ModelMessage[] => this.aiV5UIMessagesToAIV5ModelMessages(this.all.aiV5.ui()),
-      ui: (): AIV5Type.UIMessage[] => this.all.db().map(MessageList.mastraDBMessageToAIV5UIMessage),
+      model: (): AIV5Type.ModelMessage[] => {
+        const uiMessages = this.all.aiV5.ui();
+        const modelMessages = this.aiV5UIMessagesToAIV5ModelMessages(uiMessages);
+        return modelMessages;
+      },
+      ui: (): AIV5Type.UIMessage[] => {
+        const allDb = this.all.db();
+        return allDb.map(MessageList.mastraDBMessageToAIV5UIMessage);
+      },
 
       // Used when calling AI SDK streamText/generateText
       prompt: (): AIV5Type.ModelMessage[] => {

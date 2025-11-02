@@ -543,7 +543,6 @@ export async function createNetworkLoop({
         requestContext: requestContext,
         runId,
       });
-
       for await (const chunk of result.fullStream) {
         await writer.write({
           type: `agent-execution-event-${chunk.type}`,
@@ -557,6 +556,9 @@ export async function createNetworkLoop({
 
       const initData = await getInitData();
       const messages = result.messageList.get.all.v1();
+
+      const text = await result.text;
+      const toolCalls = await result.toolCalls;
 
       await memory?.saveMessages({
         messages: [
@@ -574,7 +576,7 @@ export async function createNetworkLoop({
                     primitiveType: inputData.primitiveType,
                     primitiveId: inputData.primitiveId,
                     input: inputData.prompt,
-                    finalResult: { text: await result.text, toolCalls: await result.toolCalls, messages },
+                    finalResult: { text, toolCalls, messages },
                   }),
                 },
               ],
@@ -696,7 +698,7 @@ export async function createNetworkLoop({
       // let result: any;
       // let stepResults: Record<string, any> = {};
       let chunks: ChunkType[] = [];
-      for await (const chunk of stream) {
+      for await (const chunk of stream.fullStream) {
         chunks.push(chunk);
         await writer?.write({
           type: `workflow-execution-event-${chunk.type}`,
@@ -754,11 +756,13 @@ export async function createNetworkLoop({
         name: wf.name,
       };
 
+      const usage = await stream.usage;
+
       await writer?.write({
         type: 'workflow-execution-end',
         payload: {
           ...endPayload,
-          usage: await stream.usage,
+          usage,
         },
         from: ChunkFrom.NETWORK,
         runId,
@@ -1184,7 +1188,7 @@ export async function networkLoop<
   return new MastraAgentNetworkStream({
     run,
     createStream: () => {
-      return run.streamVNext({
+      const streamResult = run.streamVNext({
         inputData: {
           task,
           primitiveId: '',
@@ -1195,7 +1199,8 @@ export async function networkLoop<
           isOneOff: false,
           verboseIntrospection: true,
         },
-      }).fullStream;
+      });
+      return streamResult.fullStream;
     },
   });
 }

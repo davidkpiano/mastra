@@ -114,7 +114,7 @@ describe('SemanticRecall', () => {
       ]);
 
       // Mock storage
-      vi.mocked(mockStorage.getMessages).mockResolvedValue(similarMessages);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue({ messages: similarMessages });
 
       const result = await processor.processInput({
         messages: inputMessages,
@@ -145,7 +145,6 @@ describe('SemanticRecall', () => {
       expect(mockStorage.getMessages).toHaveBeenCalledWith({
         threadId: 'thread-1',
         resourceId: 'resource-1',
-        format: 'v2',
         selectBy: {
           include: [
             {
@@ -188,20 +187,22 @@ describe('SemanticRecall', () => {
         { id: 'vec-2', score: 0.92, metadata: { message_id: 'msg-2', thread_id: 'thread-1' } },
       ]);
 
-      vi.mocked(mockStorage.getMessages).mockResolvedValue([
-        {
-          id: 'msg-1',
-          role: 'user',
-          content: { format: 2, parts: [], content: 'Message 1' },
-          createdAt: new Date(),
-        },
-        {
-          id: 'msg-2',
-          role: 'assistant',
-          content: { format: 2, parts: [], content: 'Message 2' },
-          createdAt: new Date(),
-        },
-      ]);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue({
+        messages: [
+          {
+            id: 'msg-1',
+            role: 'user',
+            content: { format: 2, parts: [], content: 'Message 1' },
+            createdAt: new Date(),
+          },
+          {
+            id: 'msg-2',
+            role: 'assistant',
+            content: { format: 2, parts: [], content: 'Message 2' },
+            createdAt: new Date(),
+          },
+        ],
+      });
 
       await processor.processInput({
         messages: inputMessages,
@@ -242,10 +243,12 @@ describe('SemanticRecall', () => {
         { id: 'vec-3', score: 0.92, metadata: { message_id: 'msg-3', thread_id: 'thread-1' } },
       ]);
 
-      vi.mocked(mockStorage.getMessages).mockResolvedValue([
-        createTestMessage('msg-1', 'user', 'Message 1'),
-        createTestMessage('msg-3', 'user', 'Message 3'),
-      ]);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue({
+        messages: [
+          createTestMessage('msg-1', 'user', 'Message 1'),
+          createTestMessage('msg-3', 'user', 'Message 3'),
+        ],
+      });
 
       const result = await processor.processInput({
         messages: inputMessages,
@@ -286,7 +289,7 @@ describe('SemanticRecall', () => {
       ]);
 
       vi.mocked(mockVector.query).mockResolvedValue([]);
-      vi.mocked(mockStorage.getMessages).mockResolvedValue([]);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue({ messages: [] });
 
       await processor.processInput({
         messages: inputMessages,
@@ -321,7 +324,7 @@ describe('SemanticRecall', () => {
       ]);
 
       vi.mocked(mockVector.query).mockResolvedValue([]);
-      vi.mocked(mockStorage.getMessages).mockResolvedValue([]);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue({ messages: [] });
 
       await processor.processInput({
         messages: inputMessages,
@@ -549,10 +552,12 @@ describe('SemanticRecall', () => {
         { id: 'vec-2', score: 0.92, metadata: { message_id: 'msg-2', thread_id: 'thread-1' } },
       ]);
 
-      vi.mocked(mockStorage.getMessages).mockResolvedValue([
-        { id: 'msg-1', role: 'user', content: { format: 2, content: 'Existing message', parts: [] } },
-        { id: 'msg-2', role: 'assistant', content: { format: 2, content: 'Similar message', parts: [] } },
-      ]);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue({
+        messages: [
+          { id: 'msg-1', role: 'user', content: { format: 2, content: 'Existing message', parts: [] } },
+          { id: 'msg-2', role: 'assistant', content: { format: 2, content: 'Similar message', parts: [] } },
+        ],
+      });
 
       const result = await processor.processInput({
         messages: inputMessages,
@@ -587,7 +592,7 @@ describe('SemanticRecall', () => {
         { id: 'vec-1', score: 0.95, metadata: { message_id: 'msg-1', thread_id: 'thread-1' } },
       ]);
 
-      vi.mocked(mockStorage.getMessages).mockResolvedValue([createTestMessage('msg-1', 'user', 'Message 1')]);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue({ messages: [createTestMessage('msg-1', 'user', 'Message 1')] });
 
       await processor.processInput({
         messages: inputMessages,
@@ -745,16 +750,18 @@ describe('SemanticRecall', () => {
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([{ name: 'mastra-memory', dimension: 3 }]);
       vi.mocked(mockVector.query).mockResolvedValue([
-        { id: 'msg-other-1', score: 0.9 },
-        { id: 'msg-other-2', score: 0.85 },
-        { id: 'msg-same', score: 0.8 },
+        { id: 'msg-other-1', score: 0.9, metadata: { message_id: 'msg-other-1', thread_id: 'other-thread-1' } },
+        { id: 'msg-other-2', score: 0.85, metadata: { message_id: 'msg-other-2', thread_id: 'other-thread-1' } },
+        { id: 'msg-same', score: 0.8, metadata: { message_id: 'msg-same', thread_id: 'thread-1' } },
       ]);
 
-      vi.mocked(mockStorage.getMessages).mockResolvedValue([
-        crossThreadMessage1,
-        crossThreadMessage2,
-        sameThreadMessage,
-      ]);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue({
+        messages: [
+          crossThreadMessage1,
+          crossThreadMessage2,
+          sameThreadMessage,
+        ],
+      });
 
       const result = await processor.processInput({
         messages: inputMessages,
@@ -809,8 +816,10 @@ describe('SemanticRecall', () => {
       });
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([{ name: 'mastra-memory', dimension: 3 }]);
-      vi.mocked(mockVector.query).mockResolvedValue([{ id: 'msg-similar', score: 0.9 }]);
-      vi.mocked(mockStorage.getMessages).mockResolvedValue([similarMessage]);
+      vi.mocked(mockVector.query).mockResolvedValue([
+        { id: 'msg-similar', score: 0.9, metadata: { message_id: 'msg-similar', thread_id: 'thread-123' } },
+      ]);
+      vi.mocked(mockStorage.getMessages).mockResolvedValue({ messages: [similarMessage] });
 
       const result = await processor.processInput({
         messages: inputMessages,

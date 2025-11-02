@@ -317,16 +317,16 @@ const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: R
     });
   }
 
-async runInputProcessors(
+  async runInputProcessors(
     messageList: MessageList,
     tracingContext?: TracingContext,
     telemetry?: any,
     runtimeContext?: RequestContext,
   ): Promise<MessageList> {
     // Get input messages without clearing yet
-    const userMessages = messageList.get.input.db();
+    const originalUserMessages = messageList.get.input.db();
 
-    let processableMessages: MastraDBMessage[] = [...userMessages];
+    let processableMessages: MastraDBMessage[] = [...originalUserMessages];
 
 const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: RequestContext } = {
       messages: processableMessages,
@@ -400,6 +400,9 @@ const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: R
       const systemMessages = processableMessages.filter(m => m.role === 'system');
       const nonSystemMessages = processableMessages.filter(m => m.role !== 'system');
 
+      // Track IDs of original user messages to distinguish them from historical messages
+      const originalMessageIds = new Set(originalUserMessages.map(m => m.id).filter(Boolean));
+
       // Clear the original input messages before adding processed ones
       messageList.clear.input.db();
 
@@ -411,9 +414,9 @@ const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: R
         );
       }
 
-      // Add non-system messages normally
-      // We need to add them one by one to ensure they're all added to newUserMessages
-      // even if they already exist in the messages array (e.g., historical messages)
+      // Add non-system messages with correct source
+      // Messages that were in the original input get source='input'
+      // Messages added by processors (e.g., MessageHistory) get source='memory'
       if (nonSystemMessages.length > 0) {
         for (const msg of nonSystemMessages) {
           // Remove the message from the messages array if it exists
@@ -421,8 +424,12 @@ const ctx: { messages: MastraDBMessage[]; abort: () => never; runtimeContext?: R
           if (existingIndex !== -1) {
             messageList['messages'].splice(existingIndex, 1);
           }
-          // Now add it fresh, which will add it to newUserMessages
-          messageList.add([msg], 'input');
+          
+          // Determine the correct source based on whether this was an original message
+          const isOriginalMessage = msg.id && originalMessageIds.has(msg.id);
+          const source = isOriginalMessage ? 'input' : 'memory';
+          
+          messageList.add([msg], source);
         }
       }
     }

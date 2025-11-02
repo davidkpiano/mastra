@@ -2239,7 +2239,9 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
         const systemMessages = messageList.getSystemMessages();
 
         // Create the final processed message list
-        const processedList = new MessageList({
+        const allMessages = messageList.get.all.db();
+        
+        const processedListObj = new MessageList({
           threadId: threadObject.id,
           resourceId,
           generateMessageId: this.#mastra?.generateId?.bind(this.#mastra),
@@ -2248,9 +2250,24 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
         })
           .addSystem(instructions || (await this.getInstructions({ requestContext })))
           .addSystem(systemMessages)
-          .add(context || [], 'context')
-          .add(messageList.get.input.db(), 'user')
-          .get.all.prompt();
+          .add(context || [], 'context');
+        
+        // Add all non-system messages with their correct sources
+        const nonSystemMessages = allMessages.filter(m => m.role !== 'system');
+        for (const message of nonSystemMessages) {
+          // Determine the source of this message from the original messageList
+          const source = messageList.get.remembered.db().some(m => m.id === message.id)
+            ? 'memory'
+            : messageList.get.input.db().some(m => m.id === message.id)
+            ? 'input'
+            : messageList.get.response.db().some(m => m.id === message.id)
+            ? 'response'
+            : 'input'; // Default to 'input' if not found
+          
+          processedListObj.add(message, source);
+        }
+        
+        const processedList = processedListObj.get.all.prompt();
 
         return {
           convertedTools,

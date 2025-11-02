@@ -159,6 +159,9 @@ describe('Agent - network', () => {
     for await (const _chunk of anStream) {
       // console.log(chunk);
     }
+    
+    // Ensure stream is fully consumed
+    await anStream.usage;
   });
 
   it('LOOP - execute a single agent then workflow', async () => {
@@ -223,7 +226,7 @@ describe('Agent - network', () => {
 
     const prompt = `Hi!`; // <- this triggers an infinite loop
 
-    expect(orchestratorAgent.network([{ role: 'user', content: prompt }])).rejects.toThrow();
+    await expect(orchestratorAgent.network([{ role: 'user', content: prompt }])).rejects.toThrow();
   });
 
   it('Should generate title for network thread when generateTitle is enabled', async () => {
