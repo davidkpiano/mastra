@@ -848,7 +848,7 @@ export function getResuableTests(memory: Memory, workerTestConfig?: WorkerTestCo
 
   describe('Thread Pagination', () => {
     beforeEach(async () => {
-      const threads = await memory.getThreadsByResourceId({ resourceId });
+      const threads = await memory.listThreadsByResourceId({ resourceId });
       await Promise.all(threads.map(thread => memory.deleteThread(thread.id)));
     });
 
