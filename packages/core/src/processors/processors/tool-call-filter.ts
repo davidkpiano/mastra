@@ -51,10 +51,40 @@ export class ToolCallFilter implements InputProcessor {
 
     // Case 1: Exclude all tool calls and tool results
     if (this.exclude === 'all') {
-      return messages.filter(message => {
-        // Exclude messages with tool invocations
-        return !hasToolInvocations(message);
-      });
+      return messages
+        .map(message => {
+          // Skip messages with tool invocations - they'll be filtered by sanitizeAIV4UIMessages
+          if (!hasToolInvocations(message)) {
+            return message;
+          }
+
+          // For messages with tool invocations, strip the tool invocation parts
+          // but keep other content (like text)
+          if (typeof message.content === 'string') {
+            return message;
+          }
+
+          if (!message.content?.parts) {
+            return message;
+          }
+
+          const nonToolParts = message.content.parts.filter((part: any) => part.type !== 'tool-invocation');
+
+          // If no non-tool parts remain, exclude the entire message
+          if (nonToolParts.length === 0) {
+            return null;
+          }
+
+          // Return message with only non-tool parts
+          return {
+            ...message,
+            content: {
+              ...message.content,
+              parts: nonToolParts,
+            },
+          };
+        })
+        .filter((message): message is MastraDBMessage => message !== null);
     }
 
     // Case 2: Exclude specific tools by name
