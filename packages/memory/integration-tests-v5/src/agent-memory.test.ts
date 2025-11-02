@@ -226,20 +226,6 @@ describe('Agent Memory Tests', () => {
     // due to resource scope, even on the first message
     const thread2Id = randomUUID();
 
-<<<<<<< HEAD
-=======
-    // Mock the getMemoryMessages method to track if it's called
-    let getMemoryMessagesCalled = false;
-    let retrievedMemoryMessages: any[] = [];
-    const originalGetMemoryMessages = (agent as any).getMemoryMessages;
-    (agent as any).getMemoryMessages = async (...args: any[]) => {
-      getMemoryMessagesCalled = true;
-      const result = await originalGetMemoryMessages.call(agent, ...args);
-      retrievedMemoryMessages = result?.messages || [];
-      return result;
-    };
-
->>>>>>> origin/main
     const secondResponse = await agent.generate('What did we discuss about cats?', {
       memory: {
         thread: thread2Id,
@@ -247,24 +233,8 @@ describe('Agent Memory Tests', () => {
       },
     });
 
-<<<<<<< HEAD
     // Verify that the agent was able to access cross-thread memory
     // by checking that the response references the previous conversation
-=======
-    // Restore original method
-    (agent as any).getMemoryMessages = originalGetMemoryMessages;
-
-    expect(getMemoryMessagesCalled).toBe(true);
-
-    // Verify that getMemoryMessages actually returned messages from the first thread
-    expect(retrievedMemoryMessages.length).toBeGreaterThan(0);
-
-    // Verify that the retrieved messages contain content from the first thread
-    const hasMessagesFromFirstThread = retrievedMemoryMessages.some(
-      msg => msg.threadId === thread1Id || getTextContent(msg).toLowerCase().includes('cat'),
-    );
-    expect(hasMessagesFromFirstThread).toBe(true);
->>>>>>> origin/main
     expect(secondResponse.text.toLowerCase()).toMatch(/(cat|animal|discuss)/);
 
     // Verify that the second thread now has messages

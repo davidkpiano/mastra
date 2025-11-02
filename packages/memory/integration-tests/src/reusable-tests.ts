@@ -621,27 +621,12 @@ export function getResuableTests(memory: Memory, workerTestConfig?: WorkerTestCo
         expect(result.messages[0]).toMatchObject({
           role: 'user',
         });
-<<<<<<< HEAD
-        // Content can be a string or an array depending on conversion
-        const userContent = result.messages[0].content;
-        if (typeof userContent === 'string') {
-          expect(userContent).toEqual('Hello');
-        } else if (Array.isArray(userContent)) {
-          const firstPart = userContent[0];
-          if (typeof firstPart === 'object' && firstPart !== null && 'type' in firstPart && firstPart.type === 'text') {
-            expect(firstPart).toEqual(userPart);
-          } else {
-            expect(firstPart).toEqual('Hello');
-          }
-        }
-=======
         // Check content.parts structure for MastraDBMessage
         expect(result.messages[0].content.parts).toBeDefined();
         expect(result.messages[0].content.parts[0]).toMatchObject({
           type: 'text',
           text: 'Hello',
         });
->>>>>>> origin/main
         expect(result.messages[1]).toMatchObject({
           role: 'assistant',
         });
