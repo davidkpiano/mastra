@@ -83,19 +83,22 @@ export class StoreMemoryUpstash extends MemoryStorage {
       const pattern = `${TABLE_THREADS}:*`;
       const keys = await this.operations.scanKeys(pattern);
 
-      const pipeline = this.client.pipeline();
-      keys.forEach(key => pipeline.get(key));
-      const results = await pipeline.exec();
+      // Only execute pipeline if there are keys to fetch
+      if (keys.length > 0) {
+        const pipeline = this.client.pipeline();
+        keys.forEach(key => pipeline.get(key));
+        const results = await pipeline.exec();
 
-      for (let i = 0; i < results.length; i++) {
-        const thread = results[i] as StorageThreadType | null;
-        if (thread && thread.resourceId === resourceId) {
-          allThreads.push({
-            ...thread,
-            createdAt: ensureDate(thread.createdAt)!,
-            updatedAt: ensureDate(thread.updatedAt)!,
-            metadata: typeof thread.metadata === 'string' ? JSON.parse(thread.metadata) : thread.metadata,
-          });
+        for (let i = 0; i < results.length; i++) {
+          const thread = results[i] as StorageThreadType | null;
+          if (thread && thread.resourceId === resourceId) {
+            allThreads.push({
+              ...thread,
+              createdAt: ensureDate(thread.createdAt)!,
+              updatedAt: ensureDate(thread.updatedAt)!,
+              metadata: typeof thread.metadata === 'string' ? JSON.parse(thread.metadata) : thread.metadata,
+            });
+          }
         }
       }
 
