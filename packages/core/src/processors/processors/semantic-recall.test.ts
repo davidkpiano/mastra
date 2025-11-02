@@ -858,7 +858,7 @@ describe('SemanticRecall', () => {
         upsert: vi.fn().mockResolvedValue(undefined),
         query: vi.fn(),
         createIndex: vi.fn().mockResolvedValue(undefined),
-        listIndexes: vi.fn().mockResolvedValue(['mastra-memory-test-model']),
+        listIndexes: vi.fn().mockResolvedValue(['mastra_memory_test_model']),
       };
 
       const processor = new SemanticRecall({
@@ -935,7 +935,7 @@ describe('SemanticRecall', () => {
             created_at: '2024-01-01T10:00:01.000Z',
           },
         ],
-        indexName: 'mastra-memory-test-model',
+        indexName: 'mastra_memory_test_model',
       });
     });
 
@@ -961,7 +961,7 @@ describe('SemanticRecall', () => {
         upsert: vi.fn().mockResolvedValue(undefined),
         query: vi.fn(),
         createIndex: vi.fn().mockResolvedValue(undefined),
-        listIndexes: vi.fn().mockResolvedValue(['mastra-memory-test-model']),
+        listIndexes: vi.fn().mockResolvedValue(['mastra_memory_test_model']),
       };
 
       const processor = new SemanticRecall({
@@ -1020,7 +1020,7 @@ describe('SemanticRecall', () => {
             created_at: '2024-01-01T10:00:01.000Z',
           },
         ],
-        indexName: 'mastra-memory-test-model',
+        indexName: 'mastra_memory_test_model',
       });
     });
 
@@ -1041,7 +1041,7 @@ describe('SemanticRecall', () => {
         upsert: vi.fn().mockResolvedValue(undefined),
         query: vi.fn(),
         createIndex: vi.fn().mockResolvedValue(undefined),
-        listIndexes: vi.fn().mockResolvedValue(['mastra-memory-test-model']),
+        listIndexes: vi.fn().mockResolvedValue(['mastra_memory_test_model']),
       };
 
       const processor = new SemanticRecall({
@@ -1095,7 +1095,7 @@ describe('SemanticRecall', () => {
             message_id: 'msg-valid-1',
           }),
         ]),
-        indexName: 'mastra-memory-test-model',
+        indexName: 'mastra_memory_test_model',
       });
     });
 
@@ -1149,7 +1149,7 @@ describe('SemanticRecall', () => {
 
       // Should create index with correct dimension
       expect(mockVector.createIndex).toHaveBeenCalledWith({
-        indexName: 'mastra-memory-test-model',
+        indexName: 'mastra_memory_test_model',
         dimension: 3,
         metric: 'cosine',
       });
@@ -1284,7 +1284,7 @@ describe('SemanticRecall', () => {
         upsert: vi.fn(),
         query: vi.fn(),
         createIndex: vi.fn().mockResolvedValue(undefined),
-        listIndexes: vi.fn().mockResolvedValue(['mastra-memory-test-model']),
+        listIndexes: vi.fn().mockResolvedValue(['mastra_memory_test_model']),
       };
 
       const processor = new SemanticRecall({
@@ -1339,7 +1339,7 @@ describe('SemanticRecall', () => {
         upsert: vi.fn().mockRejectedValue(new Error('Vector store unavailable')),
         query: vi.fn(),
         createIndex: vi.fn().mockResolvedValue(undefined),
-        listIndexes: vi.fn().mockResolvedValue(['mastra-memory-test-model']),
+        listIndexes: vi.fn().mockResolvedValue(['mastra_memory_test_model']),
       };
 
       const processor = new SemanticRecall({
