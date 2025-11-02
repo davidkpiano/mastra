@@ -92,7 +92,7 @@ describe('Agent Memory Tests', () => {
       resourceId: 'test-resource',
     });
 
-    expect(workingMemoryData).toBe('# Test Working Memory\\n- Name: Test User');
+    expect(workingMemoryData).toBe('# Test Working Memory\n- Name: Test User');
   });
 
   it('should work with resource-scoped working memory when storage supports it', async () => {
