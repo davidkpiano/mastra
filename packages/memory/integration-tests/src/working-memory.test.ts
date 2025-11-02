@@ -427,7 +427,7 @@ describe('Working Memory Tests', () => {
 
       // Should not include any updateWorkingMemory tool-call messages (pure or mixed)
       expect(
-        saved.some(
+        saved.messages.some(
           m =>
             (m.type === 'tool-call' || m.type === 'tool-result') &&
             Array.isArray(m.content.parts) &&
@@ -438,7 +438,7 @@ describe('Working Memory Tests', () => {
       ).toBe(false);
 
       // Mixed content message: should only keep the text part
-      const assistantMessages = saved.filter(m => m.role === 'assistant');
+      const assistantMessages = saved.messages.filter(m => m.role === 'assistant');
       expect(
         assistantMessages.every(m => {
           return JSON.stringify(m).includes(`updateWorkingMemory`);
@@ -446,7 +446,7 @@ describe('Working Memory Tests', () => {
       ).toBe(false);
       // working memory should not be present
       expect(
-        saved.some(
+        saved.messages.some(
           m =>
             (m.type === 'tool-call' || m.type === 'tool-result') &&
             Array.isArray(m.content) &&
