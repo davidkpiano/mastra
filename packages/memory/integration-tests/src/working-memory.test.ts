@@ -461,7 +461,9 @@ describe('Working Memory Tests', () => {
       expect(saved.messages.some(m => m.content.content === 'Another normal message')).toBe(true);
       // User message should be present
       expect(
-        saved.messages.some(m => typeof m.content.content === 'string' && m.content.content.includes('User says something')),
+        saved.messages.some(
+          m => typeof m.content.content === 'string' && m.content.content.includes('User says something'),
+        ),
       ).toBe(true);
     });
   });
