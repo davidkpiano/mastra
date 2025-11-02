@@ -366,7 +366,13 @@ ${formattedSections.join('\n')}
    */
   private getDefaultIndexName(): string {
     const model = this.embedder.modelId || 'default';
-    return `mastra-memory-${model}`;
+    // Sanitize model ID to create valid SQL identifier:
+    // - Replace hyphens, periods, and other special chars with underscores
+    // - Ensure it starts with a letter or underscore
+    // - Limit to 63 characters total
+    const sanitizedModel = model.replace(/[^a-zA-Z0-9_]/g, '_');
+    const indexName = `mastra_memory_${sanitizedModel}`;
+    return indexName.slice(0, 63);
   }
 
   /**
