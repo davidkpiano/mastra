@@ -509,8 +509,8 @@ describe('Memory with Processors', () => {
     const weatherFilteredResult = v2ToCoreMessages(weatherFilteredMessages);
 
     // Message count may decrease if messages become empty after filtering
-    // (ToolCallFilter strips parts, and MessageList removes empty messages)
-    expect(weatherFilteredResult.length).toBeLessThanOrEqual(baselineResult.length);
+    // (ToolCallFilter removes messages with no parts remaining)
+    expect(weatherFilteredResult.length).toBeLessThan(baselineResult.length);
 
     // No weather tool calls should remain
     expect(filterToolCallsByName(weatherFilteredResult, 'get_weather').length).toBe(0);
