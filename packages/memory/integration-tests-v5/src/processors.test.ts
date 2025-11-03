@@ -249,7 +249,7 @@ describe('Memory with Processors', () => {
     const toolCallFilter = new ToolCallFilter({ exclude: ['weather'] });
     const tokenLimiter = new TokenLimiter(250);
     const runtimeContext = new RequestContext();
-    
+
     const filteredMessages = await toolCallFilter.processInput({
       messages: queryResult.messages,
       runtimeContext,
