@@ -174,8 +174,9 @@ export class ToolCallFilter implements InputProcessor {
 
           // Return message with filtered parts
           // Also filter toolInvocations if present
+          const { toolInvocations: originalToolInvocations, ...contentWithoutToolInvocations } = message.content as any;
           const updatedContent: any = {
-            ...message.content,
+            ...contentWithoutToolInvocations,
             parts: filteredParts,
           };
 
@@ -187,7 +188,7 @@ export class ToolCallFilter implements InputProcessor {
             if (filteredToolInvocations.length > 0) {
               updatedContent.toolInvocations = filteredToolInvocations;
             }
-            // If no tool invocations remain, don't include the field
+            // If no tool invocations remain, don't include the field (already excluded by destructuring)
           }
 
           return {
