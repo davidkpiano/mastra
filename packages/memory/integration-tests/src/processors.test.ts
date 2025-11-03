@@ -498,13 +498,14 @@ describe('Memory with Processors', () => {
     });
     const list2 = new MessageList({ threadId }).add(weatherQueryResult.messages, 'memory');
     const weatherFilter = new ToolCallFilter({ exclude: ['get_weather'] });
-    const weatherFilteredResult = await weatherFilter.processInput({
+    const weatherFilteredMessages = await weatherFilter.processInput({
       messages: list2.get.all.db(),
       abort: () => {
         throw new Error('Aborted');
       },
       runtimeContext: new RequestContext(),
     });
+    const weatherFilteredResult = v2ToCoreMessages(weatherFilteredMessages);
 
     // Should have fewer messages after filtering
     expect(weatherFilteredResult.length).toBeLessThan(baselineResult.length);
