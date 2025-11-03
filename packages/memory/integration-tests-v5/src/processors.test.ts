@@ -116,10 +116,10 @@ describe('Memory with Processors', () => {
     expect(allMessagesQuery.messages.length).toBe(20);
 
     // Apply TokenLimiter processor directly
-    const tokenLimiter = new TokenLimiter(3000); // High limit that should exceed total tokens
+    const tokenLimiter2 = new TokenLimiter(3000); // High limit that should exceed total tokens
     const messageList = new MessageList({ threadId: thread.id, resourceId }).add(allMessagesQuery.messages, 'memory');
 
-    const processedMessages = await tokenLimiter.processInput(messageList.get.all.db(), new RequestContext());
+    const processedMessages = await tokenLimiter2.processInput(messageList.get.all.db(), new RequestContext());
 
     // create response message list to add to memory
     const messages = new MessageList({ threadId: thread.id, resourceId })
