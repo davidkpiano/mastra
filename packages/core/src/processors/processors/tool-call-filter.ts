@@ -121,82 +121,75 @@ export class ToolCallFilter implements InputProcessor {
       }
 
       // Second pass: filter out excluded tool invocation parts
-      return messages
-        .map(message => {
-          if (!hasToolInvocations(message)) {
-            return message;
+      return messages.map(message => {
+        if (!hasToolInvocations(message)) {
+          return message;
+        }
+
+        if (typeof message.content === 'string') {
+          return message;
+        }
+
+        if (!message.content?.parts) {
+          return message;
+        }
+
+        // Filter out excluded tool invocation parts
+        const filteredParts = message.content.parts.filter((part: any) => {
+          if (part.type !== 'tool-invocation') {
+            return true; // Keep non-tool parts
           }
 
-          if (typeof message.content === 'string') {
-            return message;
-          }
-
-          if (!message.content?.parts) {
-            return message;
-          }
-
-          // Filter out excluded tool invocation parts
-          const filteredParts = message.content.parts.filter((part: any) => {
-            if (part.type !== 'tool-invocation') {
-              return true; // Keep non-tool parts
-            }
-
-            type V2ToolInvocationPart = {
-              type: 'tool-invocation';
-              toolInvocation: {
-                toolName: string;
-                toolCallId: string;
-                args: unknown;
-                result?: unknown;
-                state: 'call' | 'result';
-              };
+          type V2ToolInvocationPart = {
+            type: 'tool-invocation';
+            toolInvocation: {
+              toolName: string;
+              toolCallId: string;
+              args: unknown;
+              result?: unknown;
+              state: 'call' | 'result';
             };
-            const invocationPart = part as unknown as V2ToolInvocationPart;
-            const invocation = invocationPart.toolInvocation;
+          };
+          const invocationPart = part as unknown as V2ToolInvocationPart;
+          const invocation = invocationPart.toolInvocation;
 
-            // Exclude if it's a call for an excluded tool
-            if (invocation.state === 'call' && this.exclude.includes(invocation.toolName)) {
-              return false;
-            }
-
-            // Exclude if it's a result for an excluded tool call
-            if (invocation.state === 'result' && excludedToolCallIds.has(invocation.toolCallId)) {
-              return false;
-            }
-
-            return true; // Keep other tool invocations
-          });
-
-          // If no parts remain, exclude the entire message
-          if (filteredParts.length === 0) {
-            return null;
+          // Exclude if it's a call for an excluded tool
+          if (invocation.state === 'call' && this.exclude.includes(invocation.toolName)) {
+            return false;
           }
 
-          // Return message with filtered parts
-          // Also filter toolInvocations if present
-          const { toolInvocations: originalToolInvocations, ...contentWithoutToolInvocations } = message.content as any;
-          const updatedContent: any = {
-            ...contentWithoutToolInvocations,
-            parts: filteredParts,
-          };
-
-          // Filter toolInvocations array if it exists
-          if ('toolInvocations' in message.content && Array.isArray((message.content as any).toolInvocations)) {
-            const filteredToolInvocations = (message.content as any).toolInvocations.filter(
-              (inv: any) => !this.exclude.includes(inv.toolName),
-            );
-            if (filteredToolInvocations.length > 0) {
-              updatedContent.toolInvocations = filteredToolInvocations;
-            }
-            // If no tool invocations remain, don't include the field (already excluded by destructuring)
+          // Exclude if it's a result for an excluded tool call
+          if (invocation.state === 'result' && excludedToolCallIds.has(invocation.toolCallId)) {
+            return false;
           }
 
-          return {
-            ...message,
-            content: updatedContent,
-          };
-        })
-        .filter((message): message is MastraDBMessage => message !== null);
+          return true; // Keep other tool invocations
+        });
+
+        // Return message with filtered parts (keep message even if no parts remain)
+        // Also filter toolInvocations if present
+        const { toolInvocations: originalToolInvocations, ...contentWithoutToolInvocations } = message.content as any;
+        const updatedContent: any = {
+          ...contentWithoutToolInvocations,
+          parts: filteredParts,
+        };
+
+        // Filter toolInvocations array if it exists
+        if ('toolInvocations' in message.content && Array.isArray((message.content as any).toolInvocations)) {
+          const filteredToolInvocations = (message.content as any).toolInvocations.filter(
+            (inv: any) => !this.exclude.includes(inv.toolName),
+          );
+          if (filteredToolInvocations.length > 0) {
+            updatedContent.toolInvocations = filteredToolInvocations;
+          }
+          // If no tool invocations remain, don't include the field (already excluded by destructuring)
+        }
+
+        return {
+          ...message,
+          content: updatedContent,
+        };
+      });
     }
 
     // Case 3: Empty exclude array, return original messages
