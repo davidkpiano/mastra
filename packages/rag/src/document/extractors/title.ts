@@ -122,7 +122,7 @@ export class TitleExtractor extends BaseExtractor {
           instructions:
             'You are a title extractor. You are given a list of nodes and you need to extract the title from the nodes.',
         });
-        const result = await miniAgent.generate(
+        const result = await miniAgent.generate<undefined, 'mastra'>(
           [{ role: 'user', content: this.combineTemplate.format({ context: combinedTitles }) }],
           { format: 'mastra' },
         );

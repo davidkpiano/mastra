@@ -79,7 +79,7 @@ export class SummaryExtractor extends BaseExtractor {
 
     let summary = '';
     if (this.llm.specificationVersion === 'v2') {
-      const result = await miniAgent.generate([{ role: 'user', content: prompt }], { format: 'mastra' });
+      const result = await miniAgent.generate<undefined, 'mastra'>([{ role: 'user', content: prompt }], { format: 'mastra' });
       summary = result.text;
     } else {
       const result = await miniAgent.generateLegacy([{ role: 'user', content: prompt }]);
