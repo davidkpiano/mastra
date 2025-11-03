@@ -449,16 +449,18 @@ describe('Working Memory Tests', () => {
 
       // Pure text message should be present
       expect(
-        saved.messages.some(m =>
-          Array.isArray(m.content.parts) &&
-          m.content.parts.some((part: any) => part.type === 'text' && part.text === 'Another normal message'),
+        saved.messages.some(
+          m =>
+            Array.isArray(m.content.parts) &&
+            m.content.parts.some((part: any) => part.type === 'text' && part.text === 'Another normal message'),
         ),
       ).toBe(true);
       // User message should be present
       expect(
-        saved.messages.some(m =>
-          Array.isArray(m.content.parts) &&
-          m.content.parts.some((part: any) => part.type === 'text' && part.text?.includes('User says something')),
+        saved.messages.some(
+          m =>
+            Array.isArray(m.content.parts) &&
+            m.content.parts.some((part: any) => part.type === 'text' && part.text?.includes('User says something')),
         ),
       ).toBe(true);
     });
