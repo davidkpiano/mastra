@@ -157,7 +157,8 @@ describe('Memory with Processors', () => {
     // After consolidation (adding with 'response' source), tool call/result messages are merged
     // The actual count depends on how many tool messages were in the queried set
     expect(listed.length).toBeLessThan(allMessagesQuery.messages.length);
-    expect(allMessagesResult.length).toBeLessThan(allMessagesQuery.messages.length);
+    // TokenLimiter with high limit should return all messages
+    expect(allMessagesResult.length).toBe(allMessagesQuery.messages.length);
   });
 
   it('should apply ToolCallFilter when retrieving messages', async () => {
