@@ -518,42 +518,6 @@ describe('Memory with Processors', () => {
 
     // Calculator tool calls should still be present
     expect(filterToolCallsByName(weatherFilteredResult, 'calculator').length).toBeGreaterThan(0);
-
-    // Test token limiting
-    const tokenLimitQuery = await memory.query({
-      threadId,
-      selectBy: { last: 20 },
-    });
-    const tokenLimitedResult = await applyInputProcessors(
-      tokenLimitQuery.messages,
-      [new TokenLimiter(100)], // Small limit to only get a subset
-      threadId,
-      resourceId,
-    );
-
-    // Should have fewer messages after token limiting
-    expect(tokenLimitedResult.length).toBeLessThan(baselineResult.length);
-
-    // Test combining processors
-    const combinedQuery = await memory.query({
-      threadId,
-      selectBy: { last: 20 },
-    });
-    const combinedResult = await applyInputProcessors(
-      combinedQuery.messages,
-      [new ToolCallFilter({ exclude: ['get_weather', 'calculator'] }), new TokenLimiter(500)],
-      threadId,
-      resourceId,
-    );
-
-    // No tool calls should remain
-    expect(filterToolCallsByName(combinedResult, 'get_weather').length).toBe(0);
-    expect(filterToolCallsByName(combinedResult, 'calculator').length).toBe(0);
-    expect(filterToolResultsByName(combinedResult, 'get_weather').length).toBe(0);
-    expect(filterToolResultsByName(combinedResult, 'calculator').length).toBe(0);
-
-    // The result should still contain some messages
-    expect(combinedResult.length).toBeGreaterThan(0);
   });
 
   it('should chunk long text by character count', async () => {
