@@ -128,9 +128,10 @@ describe('Memory with Processors', () => {
 
     const listed = new MessageList({ threadId: thread.id, resourceId }).add(messages, 'memory').get.all.db();
 
-    // We should get all 20 messages back (no reduction due to high token limit)
-    expect(listed.length).toBe(20);
-    // processedMessages should also be 20 (no consolidation when adding with 'memory' source)
+    // We should get all messages back (no reduction due to high token limit)
+    // Note: messages are consolidated when added with 'response' source, so listed.length === messages.length
+    expect(listed.length).toBe(messages.length);
+    // processedMessages should be 20 (no consolidation yet)
     expect(processedMessages.length).toBe(20);
   });
 

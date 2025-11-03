@@ -208,7 +208,7 @@ describe('Memory with Processors', () => {
     });
     const result2 = v2ToCoreMessages(queryResult2.messages);
     const messages2 = new MessageList({ threadId: thread.id, resourceId }).add(result2, 'response').get.all.db();
-    expect(new MessageList().add(messages2, 'memory').get.all.db()).toHaveLength(messagesV2.length);
+    expect(new MessageList().add(messages2, 'memory').get.all.db()).toHaveLength(messages2.length);
     expect(filterToolCallsByName(result2, 'weather')).toHaveLength(1);
     expect(filterToolResultsByName(result2, 'weather')).toHaveLength(1);
     expect(filterToolCallsByName(result2, 'calculator')).toHaveLength(1);
