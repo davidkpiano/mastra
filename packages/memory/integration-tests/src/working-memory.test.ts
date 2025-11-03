@@ -439,7 +439,7 @@ describe('Working Memory Tests', () => {
       // Mixed content message: should only keep the text part
       const assistantMessages = saved.messages.filter(m => m.role === 'assistant');
       expect(
-        assistantMessages.every(m => {
+        assistantMessages.some(m => {
           return JSON.stringify(m).includes(`updateWorkingMemory`);
         }),
       ).toBe(false);
