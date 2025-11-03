@@ -89,20 +89,13 @@ export class ToolCallFilter implements InputProcessor {
 
     // Case 2: Exclude specific tools by name
     if (this.exclude.length > 0) {
-      // Single pass approach - track excluded tool call IDs while filtering
+      // Track excluded tool call IDs to also filter their results
       const excludedToolCallIds = new Set<string>();
 
-      return messages.filter(message => {
+      // First pass: identify excluded tool call IDs
+      for (const message of messages) {
         const toolInvocations = getToolInvocations(message);
-
-        if (toolInvocations.length === 0) {
-          return true; // Keep messages without tool invocations
-        }
-
-        let shouldExclude = false;
-
         for (const part of toolInvocations) {
-          // MastraDBMessage parts use type: 'tool-invocation' with nested toolInvocation property
           type V2ToolInvocationPart = {
             type: 'tool-invocation';
             toolInvocation: {
@@ -116,20 +109,75 @@ export class ToolCallFilter implements InputProcessor {
           const invocationPart = part as unknown as V2ToolInvocationPart;
           const invocation = invocationPart.toolInvocation;
 
-          // Check if this is a tool call (not a result) and if it's in the exclude list
+          // Track tool call IDs for excluded tools
           if (invocation.state === 'call' && this.exclude.includes(invocation.toolName)) {
             excludedToolCallIds.add(invocation.toolCallId);
-            shouldExclude = true;
-          }
-
-          // Check if this is a result for an excluded tool call
-          if (invocation.state === 'result' && excludedToolCallIds.has(invocation.toolCallId)) {
-            shouldExclude = true;
           }
         }
+      }
 
-        return !shouldExclude;
-      });
+      // Second pass: filter out excluded tool invocation parts
+      return messages
+        .map(message => {
+          if (!hasToolInvocations(message)) {
+            return message;
+          }
+
+          if (typeof message.content === 'string') {
+            return message;
+          }
+
+          if (!message.content?.parts) {
+            return message;
+          }
+
+          // Filter out excluded tool invocation parts
+          const filteredParts = message.content.parts.filter((part: any) => {
+            if (part.type !== 'tool-invocation') {
+              return true; // Keep non-tool parts
+            }
+
+            type V2ToolInvocationPart = {
+              type: 'tool-invocation';
+              toolInvocation: {
+                toolName: string;
+                toolCallId: string;
+                args: unknown;
+                result?: unknown;
+                state: 'call' | 'result';
+              };
+            };
+            const invocationPart = part as unknown as V2ToolInvocationPart;
+            const invocation = invocationPart.toolInvocation;
+
+            // Exclude if it's a call for an excluded tool
+            if (invocation.state === 'call' && this.exclude.includes(invocation.toolName)) {
+              return false;
+            }
+
+            // Exclude if it's a result for an excluded tool call
+            if (invocation.state === 'result' && excludedToolCallIds.has(invocation.toolCallId)) {
+              return false;
+            }
+
+            return true; // Keep other tool invocations
+          });
+
+          // If no parts remain, exclude the entire message
+          if (filteredParts.length === 0) {
+            return null;
+          }
+
+          // Return message with filtered parts
+          return {
+            ...message,
+            content: {
+              ...message.content,
+              parts: filteredParts,
+            },
+          };
+        })
+        .filter((message): message is MastraDBMessage => message !== null);
     }
 
     // Case 3: Empty exclude array, return original messages
