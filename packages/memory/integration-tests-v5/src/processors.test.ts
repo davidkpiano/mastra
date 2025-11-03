@@ -119,7 +119,13 @@ describe('Memory with Processors', () => {
     const tokenLimiter2 = new TokenLimiter(3000); // High limit that should exceed total tokens
     const messageList = new MessageList({ threadId: thread.id, resourceId }).add(allMessagesQuery.messages, 'memory');
 
-    const processedMessages = await tokenLimiter2.processInput(messageList.get.all.db(), new RequestContext());
+    const processedMessages = await tokenLimiter2.processInput({
+      messages: messageList.get.all.db(),
+      abort: () => {
+        throw new Error('Aborted');
+      },
+      runtimeContext: new RequestContext(),
+    });
 
     // create response message list to add to memory
     const messages = new MessageList({ threadId: thread.id, resourceId })
