@@ -462,13 +462,16 @@ describe('Agent Memory Tests', () => {
 
       const assistantMessage = messages.find(
         (m: any) =>
-          m.role === 'assistant' && Array.isArray(m.content) && m.content.some((p: any) => p?.type === 'reasoning'),
+          m.role === 'assistant' &&
+          m.content?.parts &&
+          Array.isArray(m.content.parts) &&
+          m.content.parts.some((p: any) => p?.type === 'reasoning'),
       );
 
       expect(assistantMessage).toBeDefined();
 
-      const retrievedReasoningParts = Array.isArray((assistantMessage as any).content)
-        ? (assistantMessage as any).content.filter((p: any) => p?.type === 'reasoning')
+      const retrievedReasoningParts = Array.isArray((assistantMessage as any).content?.parts)
+        ? (assistantMessage as any).content.parts.filter((p: any) => p?.type === 'reasoning')
         : [];
 
       expect(retrievedReasoningParts).toBeDefined();

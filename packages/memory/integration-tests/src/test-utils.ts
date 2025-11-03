@@ -71,13 +71,38 @@ export function generateConversationHistory({
 
     // Create assistant message
     if (includeTool) {
-      // Assistant message with tool call
+      // Assistant message with tool call (state: 'call')
       messages.push({
         role: 'assistant',
         content: {
           format: 2,
           parts: [
             { type: 'text', text: `Using ${toolName} tool:` },
+            {
+              type: 'tool-invocation',
+              toolInvocation: {
+                state: 'call',
+                toolCallId: `tool-${i}`,
+                toolName,
+                args: toolArgs[toolName as keyof typeof toolArgs] || {},
+              },
+            },
+          ],
+        },
+        id: `tool-call-${i * 2 + 1}`,
+        threadId,
+        resourceId,
+        createdAt: new Date(startTime + i * 2000 + 1000), // 1 second after user message
+      });
+      counts.messages++;
+      counts.toolCalls++;
+
+      // Assistant message with tool result (state: 'result')
+      messages.push({
+        role: 'assistant',
+        content: {
+          format: 2,
+          parts: [
             {
               type: 'tool-invocation',
               toolInvocation: {
@@ -90,13 +115,12 @@ export function generateConversationHistory({
             },
           ],
         },
-        id: `tool-call-${i * 2 + 1}`,
+        id: `tool-result-${i * 2 + 1}`,
         threadId,
         resourceId,
-        createdAt: new Date(startTime + i * 2000 + 1000), // 1 second after user message
+        createdAt: new Date(startTime + i * 2000 + 1500), // 0.5 seconds after tool call
       });
       counts.messages++;
-      counts.toolCalls++;
       counts.toolResults++;
     } else {
       // Regular assistant text message
