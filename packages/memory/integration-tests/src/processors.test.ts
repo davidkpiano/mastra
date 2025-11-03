@@ -186,13 +186,14 @@ describe('Memory with Processors', () => {
       selectBy: { last: 20 },
     });
     const toolCallFilter = new ToolCallFilter({ exclude: ['weather'] });
-    const result = await toolCallFilter.processInput({
-      messages: v2ToCoreMessages(queryResult.messages),
+    const filteredMessages = await toolCallFilter.processInput({
+      messages: queryResult.messages,
       abort: () => {
         throw new Error('Aborted');
       },
       runtimeContext: new RequestContext(),
     });
+    const result = v2ToCoreMessages(filteredMessages);
     const messages = new MessageList({ threadId: thread.id, resourceId }).add(result, 'response').get.all.db();
     expect(new MessageList().add(messages, 'memory').get.all.db().length).toBeLessThan(messagesV2.length);
     expect(filterToolCallsByName(result, 'weather')).toHaveLength(0);
@@ -219,13 +220,14 @@ describe('Memory with Processors', () => {
       selectBy: { last: 20 },
     });
     const toolCallFilter2 = new ToolCallFilter({ exclude: ['weather', 'calculator'] });
-    const result3 = await toolCallFilter2.processInput({
-      messages: v2ToCoreMessages(queryResult3.messages),
+    const filteredMessages3 = await toolCallFilter2.processInput({
+      messages: queryResult3.messages,
       abort: () => {
         throw new Error('Aborted');
       },
       runtimeContext: new RequestContext(),
     });
+    const result3 = v2ToCoreMessages(filteredMessages3);
     expect(result3.length).toBeLessThan(messagesV2.length);
     expect(filterToolCallsByName(result3, 'weather')).toHaveLength(0);
     expect(filterToolResultsByName(result3, 'weather')).toHaveLength(0);
@@ -238,13 +240,14 @@ describe('Memory with Processors', () => {
       selectBy: { last: 20 },
     });
     const toolCallFilter3 = new ToolCallFilter();
-    const result4 = await toolCallFilter3.processInput({
-      messages: v2ToCoreMessages(queryResult4.messages),
+    const filteredMessages4 = await toolCallFilter3.processInput({
+      messages: queryResult4.messages,
       abort: () => {
         throw new Error('Aborted');
       },
       runtimeContext: new RequestContext(),
     });
+    const result4 = v2ToCoreMessages(filteredMessages4);
     expect(result4.length).toBeLessThan(messagesV2.length);
     expect(filterToolCallsByName(result4, 'weather')).toHaveLength(0);
     expect(filterToolResultsByName(result4, 'weather')).toHaveLength(0);

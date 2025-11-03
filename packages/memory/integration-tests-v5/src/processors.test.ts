@@ -159,11 +159,12 @@ describe('Memory with Processors', () => {
       selectBy: { last: 20 },
     });
     const toolCallFilter = new ToolCallFilter({ exclude: ['weather'] });
-    const result = await toolCallFilter.processInput({
-      messages: v2ToCoreMessages(queryResult.messages),
+    const filteredMessages = await toolCallFilter.processInput({
+      messages: queryResult.messages,
       abort: new AbortController().signal,
       runtimeContext: new RequestContext(),
     });
+    const result = v2ToCoreMessages(filteredMessages);
     const messages = new MessageList({ threadId: thread.id, resourceId }).add(result, 'response').get.all.db();
     expect(new MessageList().add(messages, 'memory').get.all.db().length).toBeLessThan(messagesV2.length);
     expect(filterToolCallsByName(result, 'weather')).toHaveLength(0);

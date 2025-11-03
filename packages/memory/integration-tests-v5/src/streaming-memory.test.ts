@@ -296,6 +296,13 @@ describe('Memory Streaming Tests', () => {
               await new Promise(res => setTimeout(res, 10));
               return state.clipboard;
             }
+            if (toolCall.toolName === `get_weather`) {
+              // Handle weather tool client-side
+              const result = await weatherTool.execute({
+                context: toolCall.args as { postalCode: string },
+              });
+              return result;
+            }
           },
         });
         return chat;
