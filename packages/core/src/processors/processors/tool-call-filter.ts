@@ -76,12 +76,26 @@ export class ToolCallFilter implements InputProcessor {
           }
 
           // Return message with only non-tool parts
+          // Also filter toolInvocations if present
+          const updatedContent: any = {
+            ...message.content,
+            parts: nonToolParts,
+          };
+
+          // Filter toolInvocations array if it exists
+          if ('toolInvocations' in message.content && Array.isArray((message.content as any).toolInvocations)) {
+            const filteredToolInvocations = (message.content as any).toolInvocations.filter(
+              (inv: any) => !this.shouldExclude(inv.toolName),
+            );
+            if (filteredToolInvocations.length > 0) {
+              updatedContent.toolInvocations = filteredToolInvocations;
+            }
+            // If no tool invocations remain, don't include the field
+          }
+
           return {
             ...message,
-            content: {
-              ...message.content,
-              parts: nonToolParts,
-            },
+            content: updatedContent,
           };
         })
         .filter((message): message is MastraDBMessage => message !== null);
@@ -169,12 +183,26 @@ export class ToolCallFilter implements InputProcessor {
           }
 
           // Return message with filtered parts
+          // Also filter toolInvocations if present
+          const updatedContent: any = {
+            ...message.content,
+            parts: filteredParts,
+          };
+
+          // Filter toolInvocations array if it exists
+          if ('toolInvocations' in message.content && Array.isArray((message.content as any).toolInvocations)) {
+            const filteredToolInvocations = (message.content as any).toolInvocations.filter(
+              (inv: any) => !this.exclude.includes(inv.toolName),
+            );
+            if (filteredToolInvocations.length > 0) {
+              updatedContent.toolInvocations = filteredToolInvocations;
+            }
+            // If no tool invocations remain, don't include the field
+          }
+
           return {
             ...message,
-            content: {
-              ...message.content,
-              parts: filteredParts,
-            },
+            content: updatedContent,
           };
         })
         .filter((message): message is MastraDBMessage => message !== null);
