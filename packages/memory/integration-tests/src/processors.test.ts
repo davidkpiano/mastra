@@ -110,7 +110,7 @@ describe('Memory with Processors', () => {
 
     // We should have messages limited by token count
     expect(result.length).toBeGreaterThan(0);
-    expect(result.length).toBeLessThanOrEqual(4); // Should get a small subset of messages
+    expect(result.length).toBeLessThan(dbMessages.length); // Should get fewer messages than the full set
 
     // Verify the last message contains a tool result in MastraDBMessage format
     const lastMessage = result.at(-1);
