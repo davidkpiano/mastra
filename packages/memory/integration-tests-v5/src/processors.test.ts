@@ -13,7 +13,7 @@ import { createTool } from '@mastra/core/tools';
 import { fastembed } from '@mastra/fastembed';
 import { LibSQLVector, LibSQLStore } from '@mastra/libsql';
 import { Memory } from '@mastra/memory';
-import { TokenLimiter, ToolCallFilter } from '@mastra/memory/processors';
+import { TokenLimiter, ToolCallFilter } from '@mastra/core/processors';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { z } from 'zod';
 import { filterToolCallsByName, filterToolResultsByName, generateConversationHistory } from './test-utils';

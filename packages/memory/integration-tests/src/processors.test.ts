@@ -156,8 +156,8 @@ describe('Memory with Processors', () => {
 
     // We should get all 20 messages
     expect(listed.length).toBe(20);
-    // core messages store tool call/result as separate messages, so +3
-    expect(allMessagesResult.length).toBe(23);
+    // MastraDBMessage format stores tool calls as parts within assistant messages, not separate messages
+    expect(allMessagesResult.length).toBe(20);
   });
 
   it('should apply ToolCallFilter when retrieving messages', async () => {

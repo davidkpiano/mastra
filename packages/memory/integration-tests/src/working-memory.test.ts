@@ -370,22 +370,27 @@ describe('Working Memory Tests', () => {
 
     it('should remove tool-call/tool-result messages with toolName "updateWorkingMemory"', async () => {
       const threadId = thread.id;
-      const messages = [
+      const messages: MastraDBMessage[] = [
         createTestMessage(threadId, 'User says something'),
         // Pure tool-call message (should be removed)
         {
           id: randomUUID(),
           threadId,
-          role: 'assistant',
-          type: 'tool-call',
-          content: [
-            {
-              type: 'tool-call',
-              toolName: 'updateWorkingMemory',
-              // ...other fields as needed
-            },
-          ],
-          toolNames: ['updateWorkingMemory'],
+          role: 'assistant' as const,
+          content: {
+            format: 2,
+            parts: [
+              {
+                type: 'tool-invocation',
+                toolInvocation: {
+                  state: 'call',
+                  toolCallId: randomUUID(),
+                  toolName: 'updateWorkingMemory',
+                  args: {},
+                },
+              },
+            ],
+          },
           createdAt: new Date(),
           resourceId,
         },
@@ -393,19 +398,25 @@ describe('Working Memory Tests', () => {
         {
           id: randomUUID(),
           threadId,
-          role: 'assistant',
-          type: 'text',
-          content: [
-            {
-              type: 'tool-call',
-              toolName: 'updateWorkingMemory',
-              args: { memory: 'should not persist' },
-            },
-            {
-              type: 'text',
-              text: 'Normal message',
-            },
-          ],
+          role: 'assistant' as const,
+          content: {
+            format: 2,
+            parts: [
+              {
+                type: 'tool-invocation',
+                toolInvocation: {
+                  state: 'call',
+                  toolCallId: randomUUID(),
+                  toolName: 'updateWorkingMemory',
+                  args: { memory: 'should not persist' },
+                },
+              },
+              {
+                type: 'text',
+                text: 'Normal message',
+              },
+            ],
+          },
           createdAt: new Date(),
           resourceId,
         },
@@ -413,16 +424,18 @@ describe('Working Memory Tests', () => {
         {
           id: randomUUID(),
           threadId,
-          role: 'assistant',
-          type: 'text',
-          content: 'Another normal message',
+          role: 'assistant' as const,
+          content: {
+            format: 2,
+            parts: [{ type: 'text', text: 'Another normal message' }],
+          },
           createdAt: new Date(),
           resourceId,
         },
       ];
 
       // Save messages
-      const saved = await memory.saveMessages({ messages: messages as MastraMessageV1[] });
+      const saved = await memory.saveMessages({ messages });
 
       // Should not include any updateWorkingMemory tool-call messages (pure or mixed)
       // In MastraDBMessage format, tool calls are in content.parts with type 'tool-invocation'
