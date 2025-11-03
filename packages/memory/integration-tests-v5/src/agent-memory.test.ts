@@ -477,8 +477,10 @@ describe('Agent Memory Tests', () => {
       expect(retrievedReasoningParts).toBeDefined();
       expect(retrievedReasoningParts.length).toBeGreaterThan(0);
 
-      // In MastraDBMessage format, reasoning parts have a 'reasoning' property, not 'text'
-      const retrievedReasoningText = retrievedReasoningParts.map((p: any) => p.reasoning || '').join('');
+      // In MastraDBMessage format, reasoning parts have details array with text chunks
+      const retrievedReasoningText = retrievedReasoningParts
+        .flatMap((p: any) => p.details?.map((d: any) => d.text).filter(Boolean) || [])
+        .join('');
 
       expect(retrievedReasoningText.length).toBeGreaterThan(0);
       expect(retrievedReasoningText).toBe(originalReasoningText);
