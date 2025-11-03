@@ -294,7 +294,7 @@ describe('Memory Streaming Tests', () => {
             console.log(toolCall);
             if (toolCall.toolName === `clipboard`) {
               await new Promise(res => setTimeout(res, 10));
-              return state.clipboard as any as void;
+              return state.clipboard;
             }
           },
         });

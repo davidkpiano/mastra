@@ -115,24 +115,27 @@ describe('Memory with Processors', () => {
     });
     expect(allMessagesQuery.messages.length).toBe(20);
 
-    const allMessagesResult = await memory.processMessages({
-      messages: new MessageList({ threadId: thread.id, resourceId })
-        .add(allMessagesQuery.messages, 'memory')
-        .get.all.core(),
-      processors: [new TokenLimiter(3000)], // High limit that should exceed total tokens
-    });
+    // Apply TokenLimiter processor directly
+    const tokenLimiter = new TokenLimiter(3000); // High limit that should exceed total tokens
+    const messageList = new MessageList({ threadId: thread.id, resourceId })
+      .add(allMessagesQuery.messages, 'memory');
+    
+    const processedMessages = await tokenLimiter.processInput(
+      messageList.get.all.db(),
+      new RequestContext()
+    );
 
     // create response message list to add to memory
     const messages = new MessageList({ threadId: thread.id, resourceId })
-      .add(allMessagesResult, 'response')
+      .add(processedMessages, 'response')
       .get.all.db();
 
     const listed = new MessageList({ threadId: thread.id, resourceId }).add(messages, 'memory').get.all.db();
 
-    // We should get all 20 messages
+    // We should get all 20 messages back (no reduction due to high token limit)
     expect(listed.length).toBe(20);
-    // core messages store tool call/result as separate messages, so +3
-    expect(allMessagesResult.length).toBe(23);
+    // processedMessages should also be 20 (no consolidation when adding with 'memory' source)
+    expect(processedMessages.length).toBe(20);
   });
 
   it('should apply ToolCallFilter when retrieving messages', async () => {
