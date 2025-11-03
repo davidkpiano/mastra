@@ -113,8 +113,8 @@ export class ToolCallFilter implements InputProcessor {
           const invocationPart = part as unknown as V2ToolInvocationPart;
           const invocation = invocationPart.toolInvocation;
 
-          // Track tool call IDs for excluded tools
-          if (invocation.state === 'call' && this.exclude.includes(invocation.toolName)) {
+          // Track tool call IDs for excluded tools (both call and result states)
+          if (this.exclude.includes(invocation.toolName)) {
             excludedToolCallIds.add(invocation.toolCallId);
           }
         }
