@@ -505,6 +505,15 @@ describe('Memory with Processors', () => {
       },
       runtimeContext: new RequestContext(),
     });
+
+    // Debug: Log filtered MastraDBMessages before conversion
+    console.log('weatherFilteredMessages (MastraDB):', JSON.stringify(weatherFilteredMessages.map(m => ({
+      role: m.role,
+      hasToolInvocations: 'toolInvocations' in (m.content || {}),
+      toolInvocations: (m.content as any)?.toolInvocations,
+      parts: (m.content as any)?.parts?.filter((p: any) => p.type === 'tool-invocation'),
+    })), null, 2));
+
     const weatherFilteredResult = v2ToCoreMessages(weatherFilteredMessages);
 
     // Debug: Log filtered messages to understand what's happening
