@@ -3,11 +3,12 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openai } from '@ai-sdk/openai';
-import type { AgentGenerateOptions } from '@mastra/core/agent';
+import type { AgentGenerateOptions, MastraDBMessage } from '@mastra/core/agent';
 import { Agent } from '@mastra/core/agent';
 import { fastembed } from '@mastra/fastembed';
 import { LibSQLVector, LibSQLStore } from '@mastra/libsql';
 import { Memory } from '@mastra/memory';
+import type { ToolCallPart, ToolResultPart, TextPart } from 'ai';
 import { config } from 'dotenv';
 import type { JSONSchema7 } from 'json-schema';
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
@@ -59,6 +60,66 @@ const createTestMessage = (threadId: string, content: string, role: 'user' | 'as
       parts: [{ type: 'text', text: content }],
     },
     role,
+    createdAt: new Date(Date.now() + messageCounter * 1000),
+    resourceId,
+  };
+};
+
+const createToolCallMessage = (threadId: string, toolName: string, args: Record<string, any> = {}): MastraDBMessage => {
+  messageCounter++;
+  const toolCallId = randomUUID();
+  return {
+    id: randomUUID(),
+    threadId,
+    content: {
+      format: 2,
+      parts: [
+        {
+          type: 'tool-invocation',
+          toolInvocation: {
+            state: 'result',
+            toolCallId,
+            toolName,
+            args,
+            result: {},
+          },
+        },
+      ],
+    },
+    role: 'assistant',
+    createdAt: new Date(Date.now() + messageCounter * 1000),
+    resourceId,
+  };
+};
+
+const createToolResultMessage = (
+  threadId: string,
+  toolName: string,
+  toolCallId: string,
+  result: any,
+  extraParts: (TextPart | ToolCallPart | ToolResultPart)[] = [],
+): MastraDBMessage => {
+  messageCounter++;
+  return {
+    id: randomUUID(),
+    threadId,
+    content: {
+      format: 2,
+      parts: [
+        {
+          type: 'tool-invocation',
+          toolInvocation: {
+            state: 'result',
+            toolCallId,
+            toolName,
+            args: {},
+            result,
+          },
+          ...extraParts,
+        },
+      ],
+    },
+    role: 'assistant',
     createdAt: new Date(Date.now() + messageCounter * 1000),
     resourceId,
   };
@@ -344,8 +405,8 @@ describe('Working Memory Tests', () => {
         if (message.role === `assistant` && message.content.parts) {
           for (const part of message.content.parts) {
             if (typeof part === `string`) continue;
-            if (part.type === `tool-call` && part.toolName === `updateWorkingMemory`) {
-              memoryArgs.push((part.args as any).memory);
+            if (part.type === `tool-invocation` && part.toolInvocation?.toolName === `updateWorkingMemory`) {
+              memoryArgs.push((part.toolInvocation.args as any).memory);
             }
           }
         }
@@ -372,107 +433,51 @@ describe('Working Memory Tests', () => {
       const messages: MastraDBMessage[] = [
         createTestMessage(threadId, 'User says something'),
         // Pure tool-call message (should be removed)
-        {
-          id: randomUUID(),
-          threadId,
-          role: 'assistant' as const,
-          content: {
-            format: 2,
-            parts: [
-              {
-                type: 'tool-invocation',
-                toolInvocation: {
-                  state: 'call',
-                  toolCallId: randomUUID(),
-                  toolName: 'updateWorkingMemory',
-                  args: {},
-                },
-              },
-            ],
-          },
-          createdAt: new Date(),
-          resourceId,
-        },
-        // Mixed content: tool-call + text (tool-call part should be filtered, text kept)
-        {
-          id: randomUUID(),
-          threadId,
-          role: 'assistant' as const,
-          content: {
-            format: 2,
-            parts: [
-              {
-                type: 'tool-invocation',
-                toolInvocation: {
-                  state: 'call',
-                  toolCallId: randomUUID(),
-                  toolName: 'updateWorkingMemory',
-                  args: { memory: 'should not persist' },
-                },
-              },
-              {
-                type: 'text',
-                text: 'Normal message',
-              },
-            ],
-          },
-          createdAt: new Date(),
-          resourceId,
-        },
+        createToolCallMessage(threadId, 'updateWorkingMemory', { key: 'value', data: 'test' }),
+        // Mixed content: tool-invocation + text (tool-invocation part should be filtered, text kept)
+
+        createToolResultMessage(threadId, 'updateWorkingMemory', randomUUID(), { memory: 'should not persist' }, [
+          { type: 'text', text: 'Normal message' },
+        ]),
+
         // Pure text message (should be kept)
-        {
-          id: randomUUID(),
-          threadId,
-          role: 'assistant' as const,
-          content: {
-            format: 2,
-            parts: [{ type: 'text', text: 'Another normal message' }],
-          },
-          createdAt: new Date(),
-          resourceId,
-        },
+        createTestMessage(threadId, 'Another normal message', 'assistant'),
       ];
 
       // Save messages
-      const saved = await memory.saveMessages({ messages });
+      const { messages: saved } = await memory.saveMessages({ messages });
 
-      // Should not include any updateWorkingMemory tool-call messages (pure or mixed)
-      // In MastraDBMessage format, tool calls are in content.parts with type 'tool-invocation'
+      // Should not include any updateWorkingMemory tool-invocation messages (pure or mixed)
       expect(
-        saved.messages.some(
+        saved.some(
           m =>
-            Array.isArray(m.content.parts) &&
+            m.content.parts &&
             m.content.parts.some(
-              (part: any) => part.type === 'tool-invocation' && part.toolInvocation?.toolName === `updateWorkingMemory`,
+              p => p.type === 'tool-invocation' && p.toolInvocation?.toolName === 'updateWorkingMemory',
             ),
         ),
       ).toBe(false);
 
       // Mixed content message: should only keep the text part
-      const assistantMessages = saved.messages.filter(m => m.role === 'assistant');
+      const assistantMessages = saved.filter(m => m.role === 'assistant');
       expect(
-        assistantMessages.some(m => {
-          return JSON.stringify(m).includes(`updateWorkingMemory`);
+        assistantMessages.every(m => {
+          return !JSON.stringify(m).includes(`updateWorkingMemory`);
         }),
-      ).toBe(false);
-
-      // TODO: again seems like we're getting V1 here but types say V2
-      // It actually should return V1 for now (CoreMessage compatible)
+      ).toBe(true);
 
       // Pure text message should be present
       expect(
-        saved.messages.some(
-          m =>
-            Array.isArray(m.content.parts) &&
-            m.content.parts.some((part: any) => part.type === 'text' && part.text === 'Another normal message'),
+        saved.some(
+          m => m.content.parts && m.content.parts.some(p => p.type === 'text' && p.text === 'Another normal message'),
         ),
       ).toBe(true);
+
       // User message should be present
       expect(
-        saved.messages.some(
+        saved.some(
           m =>
-            Array.isArray(m.content.parts) &&
-            m.content.parts.some((part: any) => part.type === 'text' && part.text?.includes('User says something')),
+            m.content.parts && m.content.parts.some(p => p.type === 'text' && p.text?.includes('User says something')),
         ),
       ).toBe(true);
     });

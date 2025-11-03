@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { google } from '@ai-sdk/google';
 import { openai } from '@ai-sdk/openai';
-import type { UIMessageWithMetadata } from '@mastra/core/agent';
+import type { MastraDBMessage, UIMessageWithMetadata } from '@mastra/core/agent';
 import { Agent } from '@mastra/core/agent';
 import type { CoreMessage } from '@mastra/core/llm';
 import { Mastra } from '@mastra/core/mastra';
@@ -199,6 +199,19 @@ describe('Agent Memory Tests', () => {
     // due to resource scope, even on the first message
     const thread2Id = randomUUID();
 
+    // Mock the getMemoryMessages method to track if it's called
+    let getMemoryMessagesCalled = false;
+    let retrievedMemoryMessages: { messages: MastraDBMessage[] } = { messages: [] };
+
+    const originalGetMemoryMessages = (agent as any).getMemoryMessages;
+
+    (agent as any).getMemoryMessages = async (...args: any[]) => {
+      getMemoryMessagesCalled = true;
+      const result = await originalGetMemoryMessages.call(agent, ...args);
+      retrievedMemoryMessages = result?.messages ? result : { messages: [] };
+      return result;
+    };
+
     const secondResponse = await agent.generateLegacy('What did we discuss about cats?', {
       memory: {
         thread: thread2Id,
@@ -206,8 +219,21 @@ describe('Agent Memory Tests', () => {
       },
     });
 
-    // Verify that the agent was able to access cross-thread memory
-    // by checking that the response references the previous conversation
+    // Restore original method
+    (agent as any).getMemoryMessages = originalGetMemoryMessages;
+
+    expect(getMemoryMessagesCalled).toBe(true);
+
+    // Verify that getMemoryMessages actually returned messages from the first thread
+    expect(retrievedMemoryMessages.messages.length).toBeGreaterThan(0);
+
+    // Verify that the retrieved messages contain content from the first thread
+    const hasMessagesFromFirstThread = retrievedMemoryMessages.messages.some(msg => {
+      const text = (msg.content.parts?.[0]?.type === 'text' && msg.content.parts[0]?.text?.toLowerCase()) || '';
+      return msg.threadId === thread1Id || text?.includes('cat');
+    });
+
+    expect(hasMessagesFromFirstThread).toBe(true);
     expect(secondResponse.text.toLowerCase()).toMatch(/(cat|animal|discuss)/);
 
     // Verify that the second thread now has messages

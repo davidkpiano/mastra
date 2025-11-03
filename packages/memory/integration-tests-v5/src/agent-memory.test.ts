@@ -461,32 +461,25 @@ describe('Agent Memory Tests', () => {
       const { messages } = await agentMemory.query({ threadId });
 
       const assistantMessage = messages.find(
-        (m: any) =>
-          m.role === 'assistant' &&
-          m.content?.parts &&
-          Array.isArray(m.content.parts) &&
-          m.content.parts.some((p: any) => p?.type === 'reasoning'),
+        m => m.role === 'assistant' && m.content.parts?.find(p => p.type === 'reasoning'),
       );
 
       expect(assistantMessage).toBeDefined();
 
-      const retrievedReasoningParts = Array.isArray((assistantMessage as any).content?.parts)
-        ? (assistantMessage as any).content.parts.filter((p: any) => p?.type === 'reasoning')
-        : [];
+      const retrievedReasoningParts = assistantMessage?.content.parts?.filter(p => p?.type === 'reasoning');
 
       expect(retrievedReasoningParts).toBeDefined();
-      expect(retrievedReasoningParts.length).toBeGreaterThan(0);
+      expect(retrievedReasoningParts?.length).toBeGreaterThan(0);
 
-      // In MastraDBMessage format, reasoning parts have details array with text chunks
       const retrievedReasoningText = retrievedReasoningParts
-        .flatMap((p: any) => p.details?.map((d: any) => d.text).filter(Boolean) || [])
+        ?.map(p => p.details?.map(d => (d.type === 'text' ? d.text : '')).join('') || '')
         .join('');
 
-      expect(retrievedReasoningText.length).toBeGreaterThan(0);
+      expect(retrievedReasoningText?.length).toBeGreaterThan(0);
       expect(retrievedReasoningText).toBe(originalReasoningText);
 
       // This is the key fix for issue #8073 - before the fix, reasoning was split into many parts
-      expect(retrievedReasoningParts.length).toBe(1);
+      expect(retrievedReasoningParts?.length).toBe(1);
     }, 30000);
   });
 
