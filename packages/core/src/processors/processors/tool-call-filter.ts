@@ -77,16 +77,11 @@ export class ToolCallFilter implements InputProcessor {
 
           // Return message with only non-tool parts
           // Also filter toolInvocations if present
+          const { toolInvocations, ...contentWithoutToolInvocations } = message.content as any;
           const updatedContent: any = {
-            ...message.content,
+            ...contentWithoutToolInvocations,
             parts: nonToolParts,
           };
-
-          // Filter toolInvocations array if it exists
-          // For 'all' case, we exclude ALL tool invocations (empty array)
-          if ('toolInvocations' in message.content && Array.isArray((message.content as any).toolInvocations)) {
-            // Don't include toolInvocations field since we're excluding all tools
-          }
 
           return {
             ...message,
