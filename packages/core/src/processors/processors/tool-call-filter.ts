@@ -83,14 +83,9 @@ export class ToolCallFilter implements InputProcessor {
           };
 
           // Filter toolInvocations array if it exists
+          // For 'all' case, we exclude ALL tool invocations (empty array)
           if ('toolInvocations' in message.content && Array.isArray((message.content as any).toolInvocations)) {
-            const filteredToolInvocations = (message.content as any).toolInvocations.filter(
-              (inv: any) => !this.shouldExclude(inv.toolName),
-            );
-            if (filteredToolInvocations.length > 0) {
-              updatedContent.toolInvocations = filteredToolInvocations;
-            }
-            // If no tool invocations remain, don't include the field
+            // Don't include toolInvocations field since we're excluding all tools
           }
 
           return {
