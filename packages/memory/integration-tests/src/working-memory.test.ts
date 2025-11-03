@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { openai } from '@ai-sdk/openai';
 import type { AgentGenerateOptions } from '@mastra/core/agent';
 import { Agent } from '@mastra/core/agent';
-import type { MastraMessageV1 } from '@mastra/core/memory';
 import { fastembed } from '@mastra/fastembed';
 import { LibSQLVector, LibSQLStore } from '@mastra/libsql';
 import { Memory } from '@mastra/memory';
