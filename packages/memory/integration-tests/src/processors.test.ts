@@ -321,7 +321,6 @@ describe('Memory with Processors', () => {
       storage,
       vector,
       embedder: fastembed,
-      processors: [new ToolCallFilter(), new ConversationOnlyFilter(), new TokenLimiter(127000)],
       options: {
         lastMessages: 10,
         semanticRecall: true,
@@ -341,6 +340,7 @@ describe('Memory with Processors', () => {
       instructions,
       model: openai('gpt-4o'),
       memory,
+      inputProcessors: [new ToolCallFilter(), new ConversationOnlyFilter(), new TokenLimiter(127000)],
     });
 
     const userMessage = 'Tell me something interesting about space';

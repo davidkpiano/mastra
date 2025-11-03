@@ -192,10 +192,12 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result3 = await memory.processMessages({
-      messages: v2ToCoreMessages(queryResult3.messages),
-      processors: [new ToolCallFilter({ exclude: ['weather', 'calculator'] })],
+    const toolCallFilter3 = new ToolCallFilter({ exclude: ['weather', 'calculator'] });
+    const filteredMessages3 = await toolCallFilter3.processInput({
+      messages: queryResult3.messages,
+      runtimeContext: new RequestContext(),
     });
+    const result3 = v2ToCoreMessages(filteredMessages3);
     expect(result3.length).toBeLessThan(messagesV2.length);
     expect(filterToolCallsByName(result3, 'weather')).toHaveLength(0);
     expect(filterToolResultsByName(result3, 'weather')).toHaveLength(0);
@@ -207,10 +209,12 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result4 = await memory.processMessages({
-      messages: v2ToCoreMessages(queryResult4.messages),
-      processors: [new ToolCallFilter()],
+    const toolCallFilter4 = new ToolCallFilter();
+    const filteredMessages4 = await toolCallFilter4.processInput({
+      messages: queryResult4.messages,
+      runtimeContext: new RequestContext(),
     });
+    const result4 = v2ToCoreMessages(filteredMessages4);
     expect(result4.length).toBeLessThan(messagesV2.length);
     expect(filterToolCallsByName(result4, 'weather')).toHaveLength(0);
     expect(filterToolResultsByName(result4, 'weather')).toHaveLength(0);
@@ -242,10 +246,19 @@ describe('Memory with Processors', () => {
       threadId: thread.id,
       selectBy: { last: 20 },
     });
-    const result = await memory.processMessages({
-      messages: v2ToCoreMessages(queryResult.messages),
-      processors: [new ToolCallFilter({ exclude: ['weather'] }), new TokenLimiter(250)],
+    const toolCallFilter = new ToolCallFilter({ exclude: ['weather'] });
+    const tokenLimiter = new TokenLimiter(250);
+    const runtimeContext = new RequestContext();
+    
+    const filteredMessages = await toolCallFilter.processInput({
+      messages: queryResult.messages,
+      runtimeContext,
     });
+    const limitedMessages = await tokenLimiter.processInput({
+      messages: filteredMessages,
+      runtimeContext,
+    });
+    const result = v2ToCoreMessages(limitedMessages);
 
     // We should have fewer messages after filtering and token limiting
     expect(result.length).toBeGreaterThan(0);
@@ -269,7 +282,6 @@ describe('Memory with Processors', () => {
       storage,
       vector,
       embedder: fastembed,
-      processors: [new ToolCallFilter(), new ConversationOnlyFilter(), new TokenLimiter(127000)],
       options: {
         lastMessages: 10,
         semanticRecall: true,
@@ -289,6 +301,7 @@ describe('Memory with Processors', () => {
       instructions,
       model: openai('gpt-4o'),
       memory,
+      inputProcessors: [new ToolCallFilter(), new ConversationOnlyFilter(), new TokenLimiter(127000)],
     });
 
     const userMessage = 'Tell me something interesting about space';
@@ -430,11 +443,7 @@ describe('Memory with Processors', () => {
 
     const list = new MessageList({ threadId }).add(queryResult.messages, 'memory');
 
-    const baselineResult = await memory.processMessages({
-      messages: list.get.remembered.core(),
-      newMessages: list.get.input.core(),
-      processors: [],
-    });
+    const baselineResult = [...list.get.remembered.core(), ...list.get.input.core()];
 
     // There should be at least 6 messages (3 user + 3 assistant responses)
     expect(baselineResult.length).toBeGreaterThanOrEqual(6);
@@ -451,10 +460,12 @@ describe('Memory with Processors', () => {
       selectBy: { last: 20 },
     });
     const list2 = new MessageList({ threadId }).add(weatherQueryResult.messages, 'memory');
-    const weatherFilteredResult = await memory.processMessages({
-      messages: list2.get.all.core(),
-      processors: [new ToolCallFilter({ exclude: ['get_weather'] })],
+    const toolCallFilter5 = new ToolCallFilter({ exclude: ['get_weather'] });
+    const filteredMessages5 = await toolCallFilter5.processInput({
+      messages: list2.get.all.db(),
+      runtimeContext: new RequestContext(),
     });
+    const weatherFilteredResult = v2ToCoreMessages(filteredMessages5);
 
     // Should have fewer messages after filtering
     expect(weatherFilteredResult.length).toBeLessThan(baselineResult.length);
