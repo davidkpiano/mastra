@@ -281,20 +281,23 @@ describe('Memory with Processors', () => {
     });
     const toolCallFilter = new ToolCallFilter({ exclude: ['weather'] });
     const tokenLimiter = new TokenLimiter(250);
-    let result = await toolCallFilter.processInput({
-      messages: v2ToCoreMessages(queryResult.messages),
+    let filteredMessages = await toolCallFilter.processInput({
+      messages: queryResult.messages,
       abort: () => {
         throw new Error('Aborted');
       },
       runtimeContext: new RequestContext(),
     });
-    result = await tokenLimiter.processInput({
-      messages: result,
+    filteredMessages = await tokenLimiter.processInput({
+      messages: filteredMessages,
       abort: () => {
         throw new Error('Aborted');
       },
       runtimeContext: new RequestContext(),
     });
+
+    // Convert to CoreMessage for assertions
+    const result = v2ToCoreMessages(filteredMessages);
 
     // We should have fewer messages after filtering and token limiting
     expect(result.length).toBeGreaterThan(0);
