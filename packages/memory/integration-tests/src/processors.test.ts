@@ -507,6 +507,10 @@ describe('Memory with Processors', () => {
     });
     const weatherFilteredResult = v2ToCoreMessages(weatherFilteredMessages);
 
+    // Debug: Log filtered messages to understand what's happening
+    console.log('weatherFilteredResult:', JSON.stringify(weatherFilteredResult, null, 2));
+    console.log('get_weather tool calls:', filterToolCallsByName(weatherFilteredResult, 'get_weather'));
+
     // Message count should stay the same (ToolCallFilter strips parts, not entire messages)
     expect(weatherFilteredResult.length).toBe(baselineResult.length);
 
