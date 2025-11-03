@@ -92,7 +92,7 @@ describe('Memory with Processors', () => {
     expect(result.length).toBeLessThanOrEqual(4); // Should get a small subset of messages
 
     expect(result.at(-1)).toEqual({
-      role: 'tool',
+      role: 'assistant',
       content: [
         {
           type: 'tool-result',

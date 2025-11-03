@@ -112,9 +112,9 @@ describe('Memory with Processors', () => {
     expect(result.length).toBeGreaterThan(0);
     expect(result.length).toBeLessThanOrEqual(4); // Should get a small subset of messages
 
-    // Verify the last message is a tool result in MastraDBMessage format
+    // Verify the last message contains a tool result in MastraDBMessage format
     const lastMessage = result.at(-1);
-    expect(lastMessage?.role).toBe('tool');
+    expect(lastMessage?.role).toBe('assistant');
     expect(lastMessage?.content.parts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
