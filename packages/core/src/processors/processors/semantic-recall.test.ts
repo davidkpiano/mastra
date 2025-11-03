@@ -97,7 +97,7 @@ describe('SemanticRecall', () => {
 
       // Mock vector query
       vi.mocked(mockVector.listIndexes).mockResolvedValue([
-        { name: 'mastra-memory-text-embedding-3-small', dimension: 3 },
+        { name: 'mastra_memory_text_embedding_3_small', dimension: 3 },
       ]);
 
       vi.mocked(mockVector.query).mockResolvedValue([
@@ -135,7 +135,7 @@ describe('SemanticRecall', () => {
 
       // Verify vector query was called
       expect(mockVector.query).toHaveBeenCalledWith({
-        indexName: 'mastra-memory-text-embedding-3-small',
+        indexName: 'mastra_memory_text_embedding_3_small',
         queryVector: [0.1, 0.2, 0.3],
         topK: 3,
         filter: { thread_id: 'thread-1' },
@@ -179,7 +179,7 @@ describe('SemanticRecall', () => {
       });
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([
-        { name: 'mastra-memory-text-embedding-3-small', dimension: 3 },
+        { name: 'mastra_memory_text_embedding_3_small', dimension: 3 },
       ]);
 
       vi.mocked(mockVector.query).mockResolvedValue([
@@ -233,7 +233,7 @@ describe('SemanticRecall', () => {
       });
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([
-        { name: 'mastra-memory-text-embedding-3-small', dimension: 3 },
+        { name: 'mastra_memory_text_embedding_3_small', dimension: 3 },
       ]);
 
       // Return results with varying scores
@@ -282,7 +282,7 @@ describe('SemanticRecall', () => {
       });
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([
-        { name: 'mastra-memory-text-embedding-3-small', dimension: 3 },
+        { name: 'mastra_memory_text_embedding_3_small', dimension: 3 },
       ]);
 
       vi.mocked(mockVector.query).mockResolvedValue([]);
@@ -317,7 +317,7 @@ describe('SemanticRecall', () => {
       });
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([
-        { name: 'mastra-memory-text-embedding-3-small', dimension: 3 },
+        { name: 'mastra_memory_text_embedding_3_small', dimension: 3 },
       ]);
 
       vi.mocked(mockVector.query).mockResolvedValue([]);
@@ -351,7 +351,7 @@ describe('SemanticRecall', () => {
       });
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([
-        { name: 'mastra-memory-text-embedding-3-small', dimension: 3 },
+        { name: 'mastra_memory_text_embedding_3_small', dimension: 3 },
       ]);
 
       // No results from vector search
@@ -384,7 +384,7 @@ describe('SemanticRecall', () => {
       });
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([
-        { name: 'mastra-memory-text-embedding-3-small', dimension: 3 },
+        { name: 'mastra_memory_text_embedding_3_small', dimension: 3 },
       ]);
 
       // Simulate vector query error
@@ -487,7 +487,7 @@ describe('SemanticRecall', () => {
       });
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([
-        { name: 'mastra-memory-text-embedding-3-small', dimension: 3 },
+        { name: 'mastra_memory_text_embedding_3_small', dimension: 3 },
       ]);
 
       vi.mocked(mockVector.query).mockResolvedValue([]);
@@ -541,7 +541,7 @@ describe('SemanticRecall', () => {
       });
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([
-        { name: 'mastra-memory-text-embedding-3-small', dimension: 3 },
+        { name: 'mastra_memory_text_embedding_3_small', dimension: 3 },
       ]);
 
       vi.mocked(mockVector.query).mockResolvedValue([
@@ -582,7 +582,7 @@ describe('SemanticRecall', () => {
       });
 
       vi.mocked(mockVector.listIndexes).mockResolvedValue([
-        { name: 'mastra-memory-text-embedding-3-small', dimension: 3 },
+        { name: 'mastra_memory_text_embedding_3_small', dimension: 3 },
       ]);
 
       vi.mocked(mockVector.query).mockResolvedValue([
@@ -642,7 +642,7 @@ describe('SemanticRecall', () => {
 
       // Verify index was created
       expect(mockVector.createIndex).toHaveBeenCalledWith({
-        indexName: 'mastra-memory-text-embedding-3-small',
+        indexName: 'mastra_memory_text_embedding_3_small',
         dimension: 3,
         metric: 'cosine',
       });
