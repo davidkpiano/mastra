@@ -51,7 +51,7 @@ export class ToolCallFilter implements InputProcessor {
 
     // Case 1: Exclude all tool calls and tool results
     if (this.exclude === 'all') {
-      return messages
+      const result = messages
         .map(message => {
           // Skip messages with tool invocations - they'll be filtered by sanitizeAIV4UIMessages
           if (!hasToolInvocations(message)) {
@@ -68,20 +68,24 @@ export class ToolCallFilter implements InputProcessor {
             return message;
           }
 
+          // Filter out tool invocation parts
           const nonToolParts = message.content.parts.filter((part: any) => part.type !== 'tool-invocation');
-
-          // If no non-tool parts remain, exclude the entire message
+          
+          // If no parts remain after filtering, remove the message
           if (nonToolParts.length === 0) {
             return null;
           }
 
-          // Return message with only non-tool parts
+          // Return message with filtered parts
           // Also filter toolInvocations if present
-          const { toolInvocations, ...contentWithoutToolInvocations } = message.content as any;
+          const { toolInvocations: originalToolInvocations, ...contentWithoutToolInvocations } = message.content as any;
           const updatedContent: any = {
             ...contentWithoutToolInvocations,
             parts: nonToolParts,
           };
+
+          // Don't include toolInvocations since we're excluding all tools
+          // (already excluded by destructuring above)
 
           return {
             ...message,
@@ -89,6 +93,7 @@ export class ToolCallFilter implements InputProcessor {
           };
         })
         .filter((message): message is MastraDBMessage => message !== null);
+      return result;
     }
 
     // Case 2: Exclude specific tools by name
@@ -190,6 +195,14 @@ export class ToolCallFilter implements InputProcessor {
               updatedContent.toolInvocations = filteredToolInvocations;
             }
             // If no tool invocations remain, don't include the field (already excluded by destructuring)
+          }
+
+          // Check if message has only tool-invocation parts and no text content
+          // If so, and all tool invocations were filtered, remove the message
+          const hasOnlyToolParts = filteredParts.every((part: any) => part.type === 'tool-invocation');
+          const hasNoToolInvocations = !updatedContent.toolInvocations || updatedContent.toolInvocations.length === 0;
+          if (hasOnlyToolParts && hasNoToolInvocations) {
+            return null;
           }
 
           return {

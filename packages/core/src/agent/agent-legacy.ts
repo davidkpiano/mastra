@@ -278,7 +278,7 @@ export class AgentLegacyHandler {
           methodType: methodType === 'generate' ? 'generateLegacy' : 'streamLegacy',
         });
 
-        const messageList = new MessageList({
+        let messageList = new MessageList({
           threadId,
           resourceId,
           generateMessageId: this.capabilities.mastra?.generateId?.bind(this.capabilities.mastra),
@@ -361,6 +361,13 @@ export class AgentLegacyHandler {
           });
         }
 
+        // Set memory context in RequestContext for processors to access
+        requestContext.set('MastraMemory', {
+          thread: threadObject,
+          resourceId,
+          memoryConfig,
+        });
+
         const config = memory.getMergedThreadConfig(memoryConfig || {});
         const hasResourceScopeSemanticRecall =
           (typeof config?.semanticRecall === 'object' && config?.semanticRecall?.scope !== 'thread') ||
@@ -394,7 +401,10 @@ export class AgentLegacyHandler {
           memorySystemMessage = ``;
         }
         if (resultsFromOtherThreads.length) {
-          memorySystemMessage += `\nThe following messages were remembered from a different conversation:\n<remembered_from_other_conversation>\n${(() => {
+          memorySystemMessage += `
+The following messages were remembered from a different conversation:
+<remembered_from_other_conversation>
+${(() => {
             let result = ``;
 
             const messages = new MessageList().add(resultsFromOtherThreads, 'memory').get.all.v1();
@@ -412,7 +422,9 @@ export class AgentLegacyHandler {
               const timeofday = `${hour12}:${utcMinute < 10 ? '0' : ''}${utcMinute} ${ampm}`;
 
               if (!lastYmd || lastYmd !== ymd) {
-                result += `\nthe following messages are from ${ymd}\n`;
+                result += `
+the following messages are from ${ymd}
+`;
               }
               result += `
   Message ${msg.threadId && msg.threadId !== threadObject.id ? 'from previous conversation' : ''} at ${timeofday}: ${JSON.stringify(msg)}`;
@@ -420,26 +432,24 @@ export class AgentLegacyHandler {
               lastYmd = ymd;
             }
             return result;
-          })()}\n<end_remembered_from_other_conversation>`;
+          })()}
+<end_remembered_from_other_conversation>`;
         }
 
         if (memorySystemMessage) {
           messageList.addSystem(memorySystemMessage, 'memory');
         }
 
-        messageList
-          .add(
-            memoryMessages.filter((m: MastraDBMessage) => m.threadId === threadObject.id), // filter out messages from other threads. those are added to system message above
-            'memory',
-          )
-          // add new user messages to the list AFTER remembered messages to make ordering more reliable
-          .add(messages, 'user');
+        // Add new user messages to the list
+        // Historical messages will be added by MessageHistory input processor
+        messageList.add(messages, 'user');
 
-        const { tripwireTriggered, tripwireReason } = await this.capabilities.__runInputProcessors({
+        const { messageList: processedMessageList, tripwireTriggered, tripwireReason } = await this.capabilities.__runInputProcessors({
           requestContext,
           tracingContext: innerTracingContext,
           messageList,
         });
+        messageList = processedMessageList;
 
         // Messages are already processed by __runInputProcessors above
         // which includes memory processors (WorkingMemory, MessageHistory, etc.)

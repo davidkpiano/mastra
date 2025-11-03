@@ -19,7 +19,7 @@ import { z } from 'zod';
 import { filterToolCallsByName, filterToolResultsByName, generateConversationHistory } from './test-utils';
 
 function v2ToCoreMessages(messages: MastraDBMessage[] | UIMessage[]): CoreMessage[] {
-  return new MessageList().add(messages, 'memory').get.all.core();
+  return new MessageList().add(messages, 'response').get.all.core();
 }
 
 // Helper function to extract text content from MastraDBMessage
@@ -90,7 +90,7 @@ describe('Memory with Processors', () => {
     });
 
     // Save messages
-    await memory.saveMessages({ messages: messagesV2 });
+    const saveResult = await memory.saveMessages({ messages: messagesV2 });
 
     // Get messages with a token limit of 250 (should get ~2.5 messages)
     const queryResult = await memory.query({
@@ -178,7 +178,7 @@ describe('Memory with Processors', () => {
     });
 
     // Save messages
-    await memory.saveMessages({ messages: messagesV2 });
+    const saveResult = await memory.saveMessages({ messages: messagesV2 });
 
     // filter weather tool calls
     const queryResult = await memory.query({
@@ -195,7 +195,7 @@ describe('Memory with Processors', () => {
     });
     const result = v2ToCoreMessages(filteredMessages);
     const messages = new MessageList({ threadId: thread.id, resourceId }).add(result, 'response').get.all.db();
-    expect(new MessageList().add(messages, 'memory').get.all.db().length).toBeLessThan(messagesV2.length);
+    expect(messages.length).toBeLessThan(messagesV2.length);
     expect(filterToolCallsByName(result, 'weather')).toHaveLength(0);
     expect(filterToolResultsByName(result, 'weather')).toHaveLength(0);
     expect(filterToolCallsByName(result, 'calculator')).toHaveLength(1);

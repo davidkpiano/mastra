@@ -682,7 +682,8 @@ export class MessageList {
   }
 
   private aiV4UIMessagesToAIV4CoreMessages(messages: UIMessageV4[]): CoreMessageV4[] {
-    return convertToCoreMessagesV4(this.sanitizeAIV4UIMessages(messages));
+    const sanitized = this.sanitizeAIV4UIMessages(messages);
+    return convertToCoreMessagesV4(sanitized);
   }
   private sanitizeAIV4UIMessages(messages: UIMessageV4[]): UIMessageV4[] {
     const msgs = messages
@@ -690,12 +691,61 @@ export class MessageList {
         if (m.parts.length === 0) {
           return false;
         }
-        const safeParts = m.parts.filter(
-          p =>
-            p.type !== `tool-invocation` ||
-            // calls and partial-calls should be updated to be results at this point
-            // if they haven't we can't send them back to the llm and need to remove them.
-            (p.toolInvocation.state !== `call` && p.toolInvocation.state !== `partial-call`),
+
+        // For historical messages, tool calls and results may be in separate messages.
+        // Only filter out incomplete tool calls if they have a corresponding result in the same message.
+        const toolCallIds = new Set<string>();
+        const toolResultIds = new Set<string>();
+
+        m.parts.forEach(p => {
+          if (p.type === 'tool-invocation') {
+            if (p.toolInvocation.state === 'call' || p.toolInvocation.state === 'partial-call') {
+              toolCallIds.add(p.toolInvocation.toolCallId);
+            } else if (p.toolInvocation.state === 'result') {
+              toolResultIds.add(p.toolInvocation.toolCallId);
+            }
+          }
+        });
+
+        if (m.role === 'assistant' && (toolCallIds.size > 0 || toolResultIds.size > 0)) {
+          console.error(
+            `DEBUG sanitizeAIV4UIMessages: message ${m.id} toolCallIds=${Array.from(toolCallIds).join(',')} toolResultIds=${Array.from(toolResultIds).join(',')}`,
+          );
+        }
+
+        const safeParts = m.parts.filter(p => {
+          if (p.type !== `tool-invocation`) {
+            return true;
+          }
+
+          // Keep results
+          if (p.toolInvocation.state === 'result') {
+            console.error(
+              `DEBUG sanitizeAIV4UIMessages: keeping result ${p.toolInvocation.toolCallId}`,
+            );
+            return true;
+          }
+
+          // Keep calls only if they have a corresponding result in the same message
+          if (
+            (p.toolInvocation.state === 'call' || p.toolInvocation.state === 'partial-call') &&
+            toolResultIds.has(p.toolInvocation.toolCallId)
+          ) {
+            console.error(
+              `DEBUG sanitizeAIV4UIMessages: keeping call ${p.toolInvocation.toolCallId} (has result)`,
+            );
+            return true;
+          }
+
+          // Filter out incomplete calls (including standalone tool calls from historical messages)
+          console.error(
+            `DEBUG sanitizeAIV4UIMessages: filtering out ${p.toolInvocation.state} ${p.toolInvocation.toolCallId}`,
+          );
+          return false;
+        });
+
+        console.error(
+          `DEBUG sanitizeAIV4UIMessages: message ${m.id} safeParts.length=${safeParts.length} (was ${m.parts.length})`,
         );
 
         // fully remove this message if it has an empty parts array after stripping out incomplete tool calls.
@@ -708,9 +758,14 @@ export class MessageList {
           parts: safeParts,
         };
 
-        // ensure toolInvocations are also updated to only show results
+        // Update toolInvocations to match the filtered parts
         if (`toolInvocations` in m && m.toolInvocations) {
-          sanitized.toolInvocations = m.toolInvocations.filter(t => t.state === `result`);
+          const keptToolCallIds = new Set(
+            safeParts
+              .filter(p => p.type === 'tool-invocation')
+              .map(p => (p as any).toolInvocation.toolCallId),
+          );
+          sanitized.toolInvocations = m.toolInvocations.filter(t => keptToolCallIds.has(t.toolCallId));
         }
 
         return sanitized;
@@ -801,12 +856,6 @@ export class MessageList {
             contentType: part.mimeType,
             url: part.data,
           });
-        } else if (
-          part.type === 'tool-invocation' &&
-          (part.toolInvocation.state === 'call' || part.toolInvocation.state === 'partial-call')
-        ) {
-          // Filter out tool invocations with call or partial-call states
-          continue;
         } else if (part.type === 'tool-invocation') {
           // Handle tool invocations with step number logic
           const toolInvocation = { ...part.toolInvocation };
@@ -874,15 +923,56 @@ export class MessageList {
       const isSingleTextContentArray =
         Array.isArray(m.content.content) && m.content.content.length === 1 && m.content.content[0].type === `text`;
 
+      // Derive toolInvocations from the filtered parts array instead of using the raw m.content.toolInvocations
+      // This ensures that any filtering done by processors (like ToolCallFilter) is respected
+      const toolInvocationParts = parts.filter(
+        (p): p is Extract<typeof p, { type: 'tool-invocation' }> => p.type === 'tool-invocation',
+      );
+      
+      // Merge call and result parts with the same toolCallId into a single toolInvocation entry
+      // The AI SDK expects one entry per tool call, with state: 'result' if it has a result
+      const toolInvocationMap = new Map<string, any>();
+      const mergedToolCallIds = new Set<string>();
+      
+      for (const part of toolInvocationParts) {
+        const inv = part.toolInvocation;
+        const existing = toolInvocationMap.get(inv.toolCallId);
+        
+        if (existing) {
+          // Merge: if we have a call and a result, keep the result (which has the output)
+          if (inv.state === 'result') {
+            toolInvocationMap.set(inv.toolCallId, inv);
+            mergedToolCallIds.add(inv.toolCallId);
+          }
+          // If existing is already a result, keep it; if both are calls, keep the first
+        } else {
+          toolInvocationMap.set(inv.toolCallId, inv);
+        }
+      }
+      
+      const toolInvocations = Array.from(toolInvocationMap.values());
+
+      // Filter parts to remove duplicate tool-invocation parts that were merged
+      // Keep only the 'result' part for merged tool calls
+      const filteredParts = parts.filter(part => {
+        if (part.type === 'tool-invocation') {
+          const inv = part.toolInvocation;
+          if (mergedToolCallIds.has(inv.toolCallId)) {
+            // This tool call was merged, keep only the result part
+            return inv.state === 'result';
+          }
+        }
+        return true;
+      });
+
       const uiMessage: UIMessageWithMetadata = {
         id: m.id,
         role: m.role,
         content: isSingleTextContentArray ? contentString : m.content.content || contentString,
         createdAt: m.createdAt,
-        parts,
+        parts: filteredParts,
         reasoning: undefined,
-        toolInvocations:
-          `toolInvocations` in m.content ? m.content.toolInvocations?.filter(t => t.state === 'result') : undefined,
+        toolInvocations: toolInvocations.length > 0 ? toolInvocations : undefined,
       };
       // Preserve metadata if present
       if (m.content.metadata) {
@@ -1040,27 +1130,23 @@ export class MessageList {
 
           if (existingCallToolInvocation) {
             if (part.toolInvocation.state === 'result') {
-              // Update the existing tool-call part with the result
-              existingCallPart.toolInvocation = {
-                ...existingCallPart.toolInvocation,
-                step: part.toolInvocation.step,
-                state: 'result',
-                result: part.toolInvocation.result,
-                args: {
-                  ...existingCallPart.toolInvocation.args,
-                  ...part.toolInvocation.args,
-                },
-              };
+              // Add the result part alongside the existing call part (preserve both)
+              partsToAdd.set(index, part);
+              
+              // Also update toolInvocations array to include the result
               if (!latestMessage.content.toolInvocations) {
                 latestMessage.content.toolInvocations = [];
               }
               const toolInvocationIndex = latestMessage.content.toolInvocations.findIndex(
-                t => t.toolCallId === existingCallPart.toolInvocation.toolCallId,
+                t => t.toolCallId === part.toolInvocation.toolCallId,
               );
               if (toolInvocationIndex === -1) {
+                // Add both call and result to toolInvocations
                 latestMessage.content.toolInvocations.push(existingCallPart.toolInvocation);
+                latestMessage.content.toolInvocations.push(part.toolInvocation);
               } else {
-                latestMessage.content.toolInvocations[toolInvocationIndex] = existingCallPart.toolInvocation;
+                // Add the result as a separate entry (preserve the call)
+                latestMessage.content.toolInvocations.push(part.toolInvocation);
               }
             }
             // Map the index of the tool call in messageV2 to the index of the tool call in latestMessage
@@ -2430,7 +2516,7 @@ export class MessageList {
     // Build reasoning string (AIV4 reasoning is a string, not an array)
     let reasoning: MastraDBMessage['content']['reasoning'] = undefined;
     if (reasoningParts.length > 0) {
-      reasoning = reasoningParts.map(p => p.text).join('\n');
+      reasoning = reasoningParts.map(p => p.text).join('\\n\\n');
     }
 
     // Build experimental_attachments from file parts
@@ -2789,7 +2875,7 @@ export class MessageList {
     // Build V2 content string
     let contentString: MastraDBMessage['content']['content'] = undefined;
     if (textParts.length > 0) {
-      contentString = textParts.map(p => p.text).join('\n');
+      contentString = textParts.map(p => p.text).join('\n\n');
     }
 
     // Store original content in metadata for round-trip
@@ -2809,7 +2895,7 @@ export class MessageList {
         format: 2,
         parts: v2Parts,
         toolInvocations: toolInvocations.length > 0 ? toolInvocations : undefined,
-        reasoning: reasoningParts.length > 0 ? reasoningParts.join('\n') : undefined,
+        reasoning: reasoningParts.length > 0 ? reasoningParts.join('\\n\\n') : undefined,
         experimental_attachments: experimental_attachments.length > 0 ? experimental_attachments : undefined,
         content: contentString,
         metadata,

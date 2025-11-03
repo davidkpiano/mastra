@@ -363,7 +363,8 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
     const memoryProcessors = memory ? memory.getInputProcessors(configuredProcessors, requestContext) : [];
 
     // Memory processors should run first (to fetch history, semantic recall, working memory)
-    return [...memoryProcessors, ...configuredProcessors];
+    const result = [...memoryProcessors, ...configuredProcessors];
+    return result;
   }
 
   /**
@@ -2836,7 +2837,8 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
     messages: MessageListInput,
     generateOptions: AgentGenerateOptions<OUTPUT, EXPERIMENTAL_OUTPUT> = {},
   ): Promise<OUTPUT extends undefined ? GenerateTextResult<any, EXPERIMENTAL_OUTPUT> : GenerateObjectResult<OUTPUT>> {
-    return this.getLegacyHandler().generateLegacy(messages, generateOptions);
+    const handler = this.getLegacyHandler();
+    return handler.generateLegacy(messages, generateOptions);
   }
 
   /**

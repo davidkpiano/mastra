@@ -414,17 +414,20 @@ export class ProcessorRunner {
         );
       }
 
+      // First, remove ALL original input messages from the MessageList
+      // This ensures messages filtered out by processors are actually removed
+      for (const originalMsg of originalUserMessages) {
+        const existingIndex = messageList['messages'].findIndex(m => m.id === originalMsg.id);
+        if (existingIndex !== -1) {
+          messageList['messages'].splice(existingIndex, 1);
+        }
+      }
+
       // Add non-system messages with correct source
       // Messages that were in the original input get source='input'
       // Messages added by processors (e.g., MessageHistory) get source='memory'
       if (nonSystemMessages.length > 0) {
         for (const msg of nonSystemMessages) {
-          // Remove the message from the messages array if it exists
-          const existingIndex = messageList['messages'].findIndex(m => m.id === msg.id);
-          if (existingIndex !== -1) {
-            messageList['messages'].splice(existingIndex, 1);
-          }
-
           // Determine the correct source based on whether this was an original message
           const isOriginalMessage = msg.id && originalMessageIds.has(msg.id);
           const source = isOriginalMessage ? 'input' : 'memory';
