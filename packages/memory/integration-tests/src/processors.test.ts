@@ -118,10 +118,13 @@ describe('Memory with Processors', () => {
     expect(lastMessage?.content.parts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          type: 'tool-result',
-          toolCallId: 'tool-9',
-          toolName: 'weather',
-          result: 'Pretty hot',
+          type: 'tool-invocation',
+          toolInvocation: expect.objectContaining({
+            state: 'result',
+            toolCallId: 'tool-9',
+            toolName: 'weather',
+            result: 'Pretty hot',
+          }),
         }),
       ]),
     );
