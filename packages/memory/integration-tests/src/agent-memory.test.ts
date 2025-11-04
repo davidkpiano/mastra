@@ -611,12 +611,15 @@ describe('Agent with message processors', () => {
 
     const secondResponseRequestMessages: CoreMessage[] = JSON.parse(secondResponse.request.body as string).messages;
 
-    expect(secondResponseRequestMessages.length).toBe(5);
+    // Expect 4-5 messages depending on whether semantic recall found relevant context
+    // Messages: User (weather), Assistant (text), User (follow-up), System (instructions), [System (semantic recall)]
+    expect(secondResponseRequestMessages.length).toBeGreaterThanOrEqual(4);
+    expect(secondResponseRequestMessages.length).toBeLessThanOrEqual(5);
     // Filter out tool messages and tool results, should be the same as above since ToolCallFilter already removed them.
     expect(
       secondResponseRequestMessages.filter(m => m.role !== 'tool' || (m as any)?.tool_calls?.[0]?.type !== 'function')
         .length,
-    ).toBe(5);
+    ).toBe(secondResponseRequestMessages.length);
   }, 30_000);
 });
 
