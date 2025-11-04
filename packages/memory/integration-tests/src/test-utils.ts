@@ -54,7 +54,6 @@ export function generateConversationHistory({
 
     // Add user message
     const userMessageId = `message-${i * 2}`;
-    console.error(`DEBUG generateConversationHistory: Creating user message with id=${userMessageId}`);
     messages.push({
       role: 'user',
       content: { format: 2, parts: [{ type: 'text', text: userContent }] },
@@ -69,13 +68,11 @@ export function generateConversationHistory({
     const includeTool = i > 0 && i % toolFrequency === 0;
     const toolIndex = includeTool ? (i / toolFrequency) % toolNames.length : -1;
     const toolName = includeTool ? toolNames[toolIndex] : '';
-    console.error(`DEBUG generateConversationHistory: i=${i}, includeTool=${includeTool}, toolName=${toolName}`);
 
     // Create assistant message
     if (includeTool) {
       // Use the same ID for both tool call and result messages to enable consolidation
       const toolMessageId = `tool-message-${i * 2 + 1}`;
-      console.error(`DEBUG generateConversationHistory: Creating tool CALL message with id=${toolMessageId}`);
 
       // Assistant message with tool call (state: 'call')
       messages.push({
@@ -100,12 +97,10 @@ export function generateConversationHistory({
         resourceId,
         createdAt: new Date(startTime + i * 2000 + 1000), // 1 second after user message
       });
-      console.error(`DEBUG generateConversationHistory: Pushed tool CALL message with id=${toolMessageId}`);
       counts.messages++;
       counts.toolCalls++;
 
       // Assistant message with tool result (state: 'result')
-      console.error(`DEBUG generateConversationHistory: Creating tool RESULT message with id=${toolMessageId}`);
       messages.push({
         role: 'assistant',
         content: {
@@ -128,15 +123,11 @@ export function generateConversationHistory({
         resourceId,
         createdAt: new Date(startTime + i * 2000 + 1500), // 0.5 seconds after tool call
       });
-      console.error(`DEBUG generateConversationHistory: Pushed tool RESULT message with id=${toolMessageId}`);
       counts.messages++;
       counts.toolResults++;
     } else {
       // Regular assistant text message
       const assistantMessageId = `message-${i * 2 + 1}`;
-      console.error(
-        `DEBUG generateConversationHistory: Creating regular assistant message with id=${assistantMessageId}`,
-      );
       messages.push({
         role: 'assistant',
         content: { format: 2, parts: [{ type: 'text', text: Array(15).fill(words).flat().join(' ') }] }, // ~60 tokens
@@ -171,23 +162,14 @@ export function generateConversationHistory({
   // Consolidate tool call and result messages into single messages with both parts
   // This mimics what MessageList.add does with messageSource: 'response'
   const consolidatedMessages: MastraDBMessage[] = [];
-  console.error(`DEBUG generateConversationHistory: Starting consolidation with ${messages.length} messages`);
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
     const hasToolCall = msg.content.parts.some(p => p.type === 'tool-invocation' && p.toolInvocation.state === 'call');
-
-    console.error(
-      `DEBUG generateConversationHistory: Message ${i} (id=${msg.id}, role=${msg.role}) hasToolCall=${hasToolCall}`,
-    );
 
     if (hasToolCall && i + 1 < messages.length) {
       const nextMsg = messages[i + 1];
       const hasToolResult = nextMsg.content.parts.some(
         p => p.type === 'tool-invocation' && p.toolInvocation.state === 'result',
-      );
-
-      console.error(
-        `DEBUG generateConversationHistory: Next message ${i + 1} (id=${nextMsg.id}) hasToolResult=${hasToolResult}, sameId=${nextMsg.id === msg.id}`,
       );
 
       // If next message is a tool result with the same ID, consolidate them
@@ -199,9 +181,6 @@ export function generateConversationHistory({
             parts: [...msg.content.parts, ...nextMsg.content.parts],
           },
         };
-        console.error(
-          `DEBUG generateConversationHistory: Consolidated messages ${i} and ${i + 1} into single message with ${consolidatedMsg.content.parts.length} parts`,
-        );
         consolidatedMessages.push(consolidatedMsg);
         i++; // Skip the next message as we've already consolidated it
         continue;
@@ -210,7 +189,6 @@ export function generateConversationHistory({
 
     consolidatedMessages.push(msg);
   }
-  console.error(`DEBUG generateConversationHistory: Consolidation complete, ${consolidatedMessages.length} messages`);
 
   return {
     fakeCore: consolidatedMessages as any as CoreMessage[],
