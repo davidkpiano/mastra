@@ -477,32 +477,28 @@ describe('Memory with Processors', () => {
     });
 
     // First message - use weather tool
-    const result1 = await agent.generateLegacy('What is the weather in Seattle?', {
+    await agent.generateLegacy('What is the weather in Seattle?', {
       threadId,
       resourceId,
     });
-    console.log('DEBUG result1:', { text: result1.text?.substring(0, 100) });
     
     // Second message - use calculator tool
-    const result2 = await agent.generateLegacy('Calculate 123 * 456', {
+    await agent.generateLegacy('Calculate 123 * 456', {
       threadId,
       resourceId,
     });
-    console.log('DEBUG result2:', { text: result2.text?.substring(0, 100) });
     
     // Third message - simple text response
-    const result3 = await agent.generateLegacy('Tell me something interesting about space', {
+    await agent.generateLegacy('Tell me something interesting about space', {
       threadId,
       resourceId,
     });
-    console.log('DEBUG result3:', { text: result3.text?.substring(0, 100) });
 
     // Query with no processors to verify baseline message count
     const queryResult = await memory.query({
       threadId,
       perPage: 20,
     });
-    console.log('DEBUG queryResult:', { messageCount: queryResult.messages.length });
 
     const list = new MessageList({ threadId }).add(queryResult.messages, 'memory');
 
