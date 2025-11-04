@@ -4409,7 +4409,7 @@ function agentTests({ version }: { version: 'v1' | 'v2' }) {
           description: 'Echoes the input string.',
           inputSchema: z.object({ input: z.string() }),
           outputSchema: z.object({ output: z.string() }),
-          execute: async input => ({ output: input.input }),
+          execute: async (input, _context) => ({ output: input.input }),
         });
 
         const uppercaseTool = createTool({
@@ -4417,7 +4417,7 @@ function agentTests({ version }: { version: 'v1' | 'v2' }) {
           description: 'Converts input to uppercase.',
           inputSchema: z.object({ input: z.string() }),
           outputSchema: z.object({ output: z.string() }),
-          execute: async input => ({ output: input.input.toUpperCase() }),
+          execute: async (input, _context) => ({ output: input.input.toUpperCase() }),
         });
 
         const agent = new Agent({

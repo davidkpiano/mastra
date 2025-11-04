@@ -49,7 +49,7 @@ function runStreamTest(version: 'v1' | 'v2') {
         description: 'Always throws an error.',
         inputSchema: z.object({ input: z.string() }),
         outputSchema: z.object({ output: z.string() }),
-        execute: async () => {
+        execute: async (_input, _context) => {
           throw new Error('Tool failed!');
         },
       });
@@ -59,7 +59,7 @@ function runStreamTest(version: 'v1' | 'v2') {
         description: 'Echoes the input string.',
         inputSchema: z.object({ input: z.string() }),
         outputSchema: z.object({ output: z.string() }),
-        execute: async input => ({ output: input.input }),
+        execute: async (input, _context) => ({ output: input.input }),
       });
 
       const agent = new Agent({
@@ -169,7 +169,7 @@ function runStreamTest(version: 'v1' | 'v2') {
         description: 'Echoes the input string.',
         inputSchema: z.object({ input: z.string() }),
         outputSchema: z.object({ output: z.string() }),
-        execute: async input => ({ output: input.input }),
+        execute: async (input, _context) => ({ output: input.input }),
       });
 
       const agent = new Agent({
@@ -231,7 +231,7 @@ function runStreamTest(version: 'v1' | 'v2') {
         description: 'Echoes the input string.',
         inputSchema: z.object({ input: z.string() }),
         outputSchema: z.object({ output: z.string() }),
-        execute: async input => ({ output: input.input }),
+        execute: async (input, _context) => ({ output: input.input }),
       });
 
       const uppercaseTool = createTool({
@@ -239,7 +239,7 @@ function runStreamTest(version: 'v1' | 'v2') {
         description: 'Converts input to uppercase.',
         inputSchema: z.object({ input: z.string() }),
         outputSchema: z.object({ output: z.string() }),
-        execute: async input => ({ output: input.input.toUpperCase() }),
+        execute: async (input, _context) => ({ output: input.input.toUpperCase() }),
       });
 
       const agent = new Agent({
@@ -784,7 +784,7 @@ function runStreamTest(version: 'v1' | 'v2') {
         inputSchema: z.object({
           postalCode: z.string().describe('The location to get the weather for'),
         }),
-        execute: async input => {
+        execute: async (input, _context) => {
           return `The weather in ${input.postalCode} is sunny. It is currently 70 degrees and feels like 65 degrees.`;
         },
       });

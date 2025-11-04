@@ -39,7 +39,7 @@ describe('Agent - network', () => {
     outputSchema: z.object({
       text: z.string(),
     }),
-    execute: async ({ inputData }) => {
+    execute: async (inputData, _context) => {
       const resp = await agent1.generate(inputData.city, {
         structuredOutput: {
           schema: z.object({
@@ -61,7 +61,7 @@ describe('Agent - network', () => {
     outputSchema: z.object({
       text: z.string(),
     }),
-    execute: async ({ inputData }) => {
+    execute: async (inputData, _context) => {
       const resp = await agent2.generate(inputData.text, {
         structuredOutput: {
           schema: z.object({
