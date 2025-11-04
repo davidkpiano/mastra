@@ -199,9 +199,13 @@ export class ToolCallFilter implements InputProcessor {
 
           // Check if message has only tool-invocation parts and no text content
           // If so, and all tool invocations were filtered, remove the message
+          // Note: For V2 messages, parts is the source of truth, not toolInvocations
           const hasOnlyToolParts = filteredParts.every((part: any) => part.type === 'tool-invocation');
-          const hasNoToolInvocations = !updatedContent.toolInvocations || updatedContent.toolInvocations.length === 0;
-          if (hasOnlyToolParts && hasNoToolInvocations) {
+          const hasNoToolParts = filteredParts.length === 0;
+          const hasNoTextContent = !updatedContent.content || updatedContent.content.trim() === '';
+          
+          // Only remove the message if it has no parts at all and no text content
+          if (hasNoToolParts && hasNoTextContent) {
             return null;
           }
 

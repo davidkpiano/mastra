@@ -161,6 +161,29 @@ The test "should apply ToolCallFilter when retrieving messages" was failing with
 ### Ready for CI
 All locally runnable tests are passing. Proceeding to commit and push to CI for full validation.
 
+## Merge from main (2025-06-20)
+
+### Conflicts Resolved
+- **7 files with merge conflicts** resolved:
+  - `packages/core/src/agent/workflows/prepare-stream/prepare-memory-step.ts` - Kept processor-based memory system
+  - `packages/core/src/processors/index.ts` - Updated ai-tracing to observability imports
+  - `packages/core/src/processors/runner.ts` - Updated ai-tracing to observability imports
+  - `packages/deployer/src/server/handlers/routes/memory/handlers.ts` - Updated pagination API (getMessagesPaginated → listMessages, offset/limit → page/perPage)
+  - `packages/server/src/server/handlers/memory.ts` - Updated pagination API
+  - `packages/server/src/server/handlers/memory.test.ts` - Updated pagination API tests
+  - `packages/memory/integration-tests/src/processors.test.ts` - Added new test cases from main (TokenLimiter, combined processors)
+
+### Build Fixes Applied
+- **ai-tracing → observability**: Updated all imports across processors module
+- **Import order**: Fixed with `pnpm lint --fix`
+- **Observability packages**: Fixed `@mastra/langsmith` and `@mastra/langfuse` build issues by installing dependencies
+
+### Current Status ✅
+- **pnpm lint**: ✅ Passing
+- **pnpm build**: ✅ Passing (all packages)
+- **All conflicts resolved**: ✅
+- **Ready for local testing**: ✅ Next: Run relevant test suites to verify merge didn't break functionality
+
 ## CI Failures (Unexpected)
 
 (None yet)

@@ -707,11 +707,7 @@ export class MessageList {
           }
         });
 
-        if (m.role === 'assistant' && (toolCallIds.size > 0 || toolResultIds.size > 0)) {
-          console.error(
-            `DEBUG sanitizeAIV4UIMessages: message ${m.id} toolCallIds=${Array.from(toolCallIds).join(',')} toolResultIds=${Array.from(toolResultIds).join(',')}`,
-          );
-        }
+        
 
         const safeParts = m.parts.filter(p => {
           if (p.type !== `tool-invocation`) {
@@ -720,9 +716,6 @@ export class MessageList {
 
           // Keep results
           if (p.toolInvocation.state === 'result') {
-            console.error(
-              `DEBUG sanitizeAIV4UIMessages: keeping result ${p.toolInvocation.toolCallId}`,
-            );
             return true;
           }
 
@@ -731,22 +724,12 @@ export class MessageList {
             (p.toolInvocation.state === 'call' || p.toolInvocation.state === 'partial-call') &&
             toolResultIds.has(p.toolInvocation.toolCallId)
           ) {
-            console.error(
-              `DEBUG sanitizeAIV4UIMessages: keeping call ${p.toolInvocation.toolCallId} (has result)`,
-            );
             return true;
           }
 
           // Filter out incomplete calls (including standalone tool calls from historical messages)
-          console.error(
-            `DEBUG sanitizeAIV4UIMessages: filtering out ${p.toolInvocation.state} ${p.toolInvocation.toolCallId}`,
-          );
           return false;
         });
-
-        console.error(
-          `DEBUG sanitizeAIV4UIMessages: message ${m.id} safeParts.length=${safeParts.length} (was ${m.parts.length})`,
-        );
 
         // fully remove this message if it has an empty parts array after stripping out incomplete tool calls.
         if (!safeParts.length) {
