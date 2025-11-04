@@ -1,6 +1,6 @@
 import type { MastraDBMessage } from '../../agent/index.js';
-import type { TracingContext } from '../../ai-tracing/index.js';
 import { parseMemoryRuntimeContext } from '../../memory/types.js';
+import type { TracingContext } from '../../observability';
 import type { RequestContext } from '../../request-context/index.js';
 import type { MemoryStorage } from '../../storage/domains/memory/base.js';
 import type { Processor } from '../index.js';

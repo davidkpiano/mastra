@@ -1,6 +1,6 @@
-import type { TracingContext } from '../../ai-tracing/types';
 import { parseMemoryRuntimeContext } from '../../memory/types';
 import type { MastraDBMessage } from '../../memory/types';
+import type { TracingContext } from '../../observability';
 import type { RequestContext } from '../../request-context';
 import type { MemoryStorage } from '../../storage/domains/memory/base';
 import type { MastraEmbeddingModel, MastraVector } from '../../vector';

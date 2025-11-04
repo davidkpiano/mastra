@@ -2,7 +2,7 @@ import { Tiktoken } from 'js-tiktoken/lite';
 import type { TiktokenBPE } from 'js-tiktoken/lite';
 import o200k_base from 'js-tiktoken/ranks/o200k_base';
 import type { MastraDBMessage } from '../../agent/message-list';
-import type { TracingContext } from '../../ai-tracing/types';
+import type { TracingContext } from '../../observability';
 import type { RequestContext } from '../../request-context';
 import type { ChunkType } from '../../stream';
 import type { Processor } from '../index';
