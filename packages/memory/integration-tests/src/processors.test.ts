@@ -95,7 +95,7 @@ describe('Memory with Processors', () => {
     // Get messages with a token limit of 250 (should get ~2.5 messages)
     const queryResult = await memory.query({
       threadId: thread.id,
-      selectBy: { last: 20 },
+      perPage: 20,
     });
     const messageList = new MessageList({ threadId: thread.id, resourceId }).add(queryResult.messages, 'memory');
     const dbMessages = messageList.get.all.db();
@@ -132,7 +132,7 @@ describe('Memory with Processors', () => {
     // Now query with a very high token limit that should return all messages
     const allMessagesQuery = await memory.query({
       threadId: thread.id,
-      selectBy: { last: 20 },
+      perPage: 20,
     });
     expect(allMessagesQuery.messages.length).toBe(20);
 
@@ -183,7 +183,7 @@ describe('Memory with Processors', () => {
     // filter weather tool calls
     const queryResult = await memory.query({
       threadId: thread.id,
-      selectBy: { last: 20 },
+      perPage: 20,
     });
     const toolCallFilter = new ToolCallFilter({ exclude: ['weather'] });
     const filteredMessages = await toolCallFilter.processInput({
@@ -204,7 +204,7 @@ describe('Memory with Processors', () => {
     // make another query with no processors to make sure memory messages in DB were not altered and were only filtered from results
     const queryResult2 = await memory.query({
       threadId: thread.id,
-      selectBy: { last: 20 },
+      perPage: 20,
     });
     const result2 = v2ToCoreMessages(queryResult2.messages);
     const messages2 = new MessageList({ threadId: thread.id, resourceId }).add(result2, 'response').get.all.db();
@@ -217,7 +217,7 @@ describe('Memory with Processors', () => {
     // filter all by name
     const queryResult3 = await memory.query({
       threadId: thread.id,
-      selectBy: { last: 20 },
+      perPage: 20,
     });
     const toolCallFilter2 = new ToolCallFilter({ exclude: ['weather', 'calculator'] });
     const filteredMessages3 = await toolCallFilter2.processInput({
@@ -237,7 +237,7 @@ describe('Memory with Processors', () => {
     // filter all by default
     const queryResult4 = await memory.query({
       threadId: thread.id,
-      selectBy: { last: 20 },
+      perPage: 20,
     });
     const toolCallFilter3 = new ToolCallFilter();
     const filteredMessages4 = await toolCallFilter3.processInput({
@@ -277,7 +277,7 @@ describe('Memory with Processors', () => {
     // Apply multiple processors: first remove weather tool calls, then limit to 250 tokens
     const queryResult = await memory.query({
       threadId: thread.id,
-      selectBy: { last: 20 },
+      perPage: 20,
     });
     const toolCallFilter = new ToolCallFilter({ exclude: ['weather'] });
     const tokenLimiter = new TokenLimiter(250);
@@ -400,9 +400,7 @@ describe('Memory with Processors', () => {
     const remembered = await memory.query({
       threadId: thread.id,
       resourceId,
-      selectBy: {
-        last: 20,
-      },
+      perPage: 20,
     });
     expect(remembered.messages.filter(m => m.role === 'user').length).toBe(2);
     expect(remembered.messages.length).toBe(4); // 2 user, 2 assistant. These wont be filtered because they come from memory.query() directly
@@ -424,8 +422,8 @@ describe('Memory with Processors', () => {
       inputSchema: z.object({
         location: z.string().describe('The location to get the weather for'),
       }),
-      execute: async ({ context: { location } }) => {
-        return `The weather in ${location} is sunny. It is currently 70 degrees and feels like 65 degrees.`;
+      execute: async input => {
+        return `The weather in ${input.location} is sunny. It is currently 70 degrees and feels like 65 degrees.`;
       },
     });
 
@@ -435,8 +433,8 @@ describe('Memory with Processors', () => {
       inputSchema: z.object({
         expression: z.string().describe('The mathematical expression to calculate'),
       }),
-      execute: async ({ context: { expression } }) => {
-        return `The result of ${expression} is ${eval(expression)}`;
+      execute: async input => {
+        return `The result of ${input.expression} is ${eval(input.expression)}`;
       },
     });
 
@@ -474,7 +472,7 @@ describe('Memory with Processors', () => {
     // Query with no processors to verify baseline message count
     const queryResult = await memory.query({
       threadId,
-      selectBy: { last: 20 },
+      perPage: 20,
     });
 
     const list = new MessageList({ threadId }).add(queryResult.messages, 'memory');
@@ -494,7 +492,7 @@ describe('Memory with Processors', () => {
     // Test filtering weather tool calls
     const weatherQueryResult = await memory.query({
       threadId,
-      selectBy: { last: 20 },
+      perPage: 20,
     });
     const list2 = new MessageList({ threadId }).add(weatherQueryResult.messages, 'memory');
     const weatherFilter = new ToolCallFilter({ exclude: ['get_weather'] });
@@ -518,6 +516,42 @@ describe('Memory with Processors', () => {
 
     // Calculator tool calls should still be present
     expect(filterToolCallsByName(weatherFilteredResult, 'calculator').length).toBeGreaterThan(0);
+<<<<<<< HEAD
+=======
+
+    // Test token limiting
+    const tokenLimitQuery = await memory.query({
+      threadId,
+      perPage: 20,
+    });
+    const list3 = new MessageList({ threadId }).add(tokenLimitQuery.messages, 'memory');
+    const tokenLimitedResult = await memory.processMessages({
+      messages: list3.get.all.core(),
+      processors: [new TokenLimiter(100)], // Small limit to only get a subset
+    });
+
+    // Should have fewer messages after token limiting
+    expect(tokenLimitedResult.length).toBeLessThan(baselineResult.length);
+
+    // Test combining processors
+    const combinedQuery = await memory.query({
+      threadId,
+      perPage: 20,
+    });
+    const list4 = new MessageList({ threadId }).add(combinedQuery.messages, 'memory');
+    const combinedResult = await memory.processMessages({
+      messages: list4.get.all.core(),
+      processors: [new ToolCallFilter({ exclude: ['get_weather', 'calculator'] }), new TokenLimiter(500)],
+    });
+
+    // No tool calls should remain
+    expect(filterToolCallsByName(combinedResult, 'get_weather').length).toBe(0);
+    expect(filterToolCallsByName(combinedResult, 'calculator').length).toBe(0);
+    expect(filterToolResultsByName(combinedResult, 'get_weather').length).toBe(0);
+    expect(filterToolResultsByName(combinedResult, 'calculator').length).toBe(0);
+
+    // The result should still contain some messages
+    expect(combinedResult.length).toBeGreaterThan(0);
   });
 
   it('should chunk long text by character count', async () => {
@@ -554,7 +588,7 @@ describe('Memory with Processors', () => {
     // Query the message back
     const queryResult = await memory.query({
       threadId: thread.id,
-      selectBy: { last: 1 },
+      perPage: 1,
     });
 
     // Retrieve the message (no processors, just convert to core messages)
