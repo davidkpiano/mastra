@@ -516,8 +516,6 @@ describe('Memory with Processors', () => {
 
     // Calculator tool calls should still be present
     expect(filterToolCallsByName(weatherFilteredResult, 'calculator').length).toBeGreaterThan(0);
-<<<<<<< HEAD
-=======
 
     // Test token limiting
     const tokenLimitQuery = await memory.query({
