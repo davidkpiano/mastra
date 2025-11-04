@@ -707,8 +707,6 @@ export class MessageList {
           }
         });
 
-        
-
         const safeParts = m.parts.filter(p => {
           if (p.type !== `tool-invocation`) {
             return true;
@@ -744,9 +742,7 @@ export class MessageList {
         // Update toolInvocations to match the filtered parts
         if (`toolInvocations` in m && m.toolInvocations) {
           const keptToolCallIds = new Set(
-            safeParts
-              .filter(p => p.type === 'tool-invocation')
-              .map(p => (p as any).toolInvocation.toolCallId),
+            safeParts.filter(p => p.type === 'tool-invocation').map(p => (p as any).toolInvocation.toolCallId),
           );
           sanitized.toolInvocations = m.toolInvocations.filter(t => keptToolCallIds.has(t.toolCallId));
         }
@@ -911,16 +907,16 @@ export class MessageList {
       const toolInvocationParts = parts.filter(
         (p): p is Extract<typeof p, { type: 'tool-invocation' }> => p.type === 'tool-invocation',
       );
-      
+
       // Merge call and result parts with the same toolCallId into a single toolInvocation entry
       // The AI SDK expects one entry per tool call, with state: 'result' if it has a result
       const toolInvocationMap = new Map<string, any>();
       const mergedToolCallIds = new Set<string>();
-      
+
       for (const part of toolInvocationParts) {
         const inv = part.toolInvocation;
         const existing = toolInvocationMap.get(inv.toolCallId);
-        
+
         if (existing) {
           // Merge: if we have a call and a result, keep the result (which has the output)
           if (inv.state === 'result') {
@@ -932,7 +928,7 @@ export class MessageList {
           toolInvocationMap.set(inv.toolCallId, inv);
         }
       }
-      
+
       const toolInvocations = Array.from(toolInvocationMap.values());
 
       // Filter parts to remove duplicate tool-invocation parts that were merged
@@ -1115,7 +1111,7 @@ export class MessageList {
             if (part.toolInvocation.state === 'result') {
               // Add the result part alongside the existing call part (preserve both)
               partsToAdd.set(index, part);
-              
+
               // Also update toolInvocations array to include the result
               if (!latestMessage.content.toolInvocations) {
                 latestMessage.content.toolInvocations = [];

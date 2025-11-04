@@ -332,7 +332,7 @@ export async function listMessagesHandler({
       throw new HTTPException(404, { message: 'Thread not found' });
     }
 
-const result = await storage.listMessages({
+    const result = await storage.listMessages({
       threadId: threadId!,
       resourceId,
       perPage,

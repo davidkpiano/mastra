@@ -406,34 +406,34 @@ export class AgentLegacyHandler {
 The following messages were remembered from a different conversation:
 <remembered_from_other_conversation>
 ${(() => {
-            let result = ``;
+  let result = ``;
 
-            const messages = new MessageList().add(resultsFromOtherThreads, 'memory').get.all.v1();
-            let lastYmd: string | null = null;
-            for (const msg of messages) {
-              const date = msg.createdAt;
-              const year = date.getUTCFullYear();
-              const month = date.toLocaleString('default', { month: 'short' });
-              const day = date.getUTCDate();
-              const ymd = `${year}, ${month}, ${day}`;
-              const utcHour = date.getUTCHours();
-              const utcMinute = date.getUTCMinutes();
-              const hour12 = utcHour % 12 || 12;
-              const ampm = utcHour < 12 ? 'AM' : 'PM';
-              const timeofday = `${hour12}:${utcMinute < 10 ? '0' : ''}${utcMinute} ${ampm}`;
+  const messages = new MessageList().add(resultsFromOtherThreads, 'memory').get.all.v1();
+  let lastYmd: string | null = null;
+  for (const msg of messages) {
+    const date = msg.createdAt;
+    const year = date.getUTCFullYear();
+    const month = date.toLocaleString('default', { month: 'short' });
+    const day = date.getUTCDate();
+    const ymd = `${year}, ${month}, ${day}`;
+    const utcHour = date.getUTCHours();
+    const utcMinute = date.getUTCMinutes();
+    const hour12 = utcHour % 12 || 12;
+    const ampm = utcHour < 12 ? 'AM' : 'PM';
+    const timeofday = `${hour12}:${utcMinute < 10 ? '0' : ''}${utcMinute} ${ampm}`;
 
-              if (!lastYmd || lastYmd !== ymd) {
-                result += `
+    if (!lastYmd || lastYmd !== ymd) {
+      result += `
 the following messages are from ${ymd}
 `;
-              }
-              result += `
+    }
+    result += `
   Message ${msg.threadId && msg.threadId !== threadObject.id ? 'from previous conversation' : ''} at ${timeofday}: ${JSON.stringify(msg)}`;
 
-              lastYmd = ymd;
-            }
-            return result;
-          })()}
+    lastYmd = ymd;
+  }
+  return result;
+})()}
 <end_remembered_from_other_conversation>`;
         }
 
@@ -445,7 +445,11 @@ the following messages are from ${ymd}
         // Historical messages will be added by MessageHistory input processor
         messageList.add(messages, 'user');
 
-        const { messageList: processedMessageList, tripwireTriggered, tripwireReason } = await this.capabilities.__runInputProcessors({
+        const {
+          messageList: processedMessageList,
+          tripwireTriggered,
+          tripwireReason,
+        } = await this.capabilities.__runInputProcessors({
           requestContext,
           tracingContext: innerTracingContext,
           messageList,

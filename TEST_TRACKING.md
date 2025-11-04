@@ -5,6 +5,7 @@
 This PR refactors Mastra's memory system to fully utilize input/output processors, eliminating scattered memory logic while maintaining the public API.
 
 **Key Changes:**
+
 - Deprecated and removed `memory.processors` config, `processMessages()`, and `getMemoryMessages()` from the main Agent class
 - Introduced `MessageHistory`, `SemanticRecall`, and `WorkingMemory` as proper processors
 - `MastraMemory` now acts as a `ProcessorProvider`, automatically adding memory processors to the execution pipeline
@@ -15,21 +16,25 @@ This PR refactors Mastra's memory system to fully utilize input/output processor
 ## Key Files Changed
 
 ### Core Memory System
+
 - `packages/memory/src/mastra-memory.ts` - Main memory class, now implements ProcessorProvider
 - `packages/memory/src/processors/message-history.ts` - NEW: Saves messages to storage
 - `packages/memory/src/processors/semantic-recall.ts` - NEW: Creates embeddings for messages
 - `packages/memory/src/processors/working-memory.ts` - NEW: Manages context window
 
 ### Agent Integration
+
 - `packages/core/src/agent/agent.ts` - Removed getMemoryMessages from main class, added back for legacy support
 - `packages/core/src/agent/agent-legacy.ts` - Legacy API handler, removed deprecated memory.processMessages call
 - `packages/core/src/agent/prepare-memory-step.ts` - Refactored to use processor-based memory
 
 ### Processor System
+
 - `packages/core/src/processors/processor-runner.ts` - Orchestrates processor execution
 - `packages/core/src/processors/processors/tool-call-filter.ts` - Fixed to strip tool invocation parts correctly
 
 ### Tests (Modified during merge)
+
 - `packages/memory/integration-tests/src/agent-memory.test.ts`
 - `packages/memory/integration-tests/src/working-memory.test.ts`
 - `packages/memory/integration-tests/src/processors.test.ts`
@@ -38,6 +43,7 @@ This PR refactors Mastra's memory system to fully utilize input/output processor
 ## Relevant Test Files
 
 ### Memory Package Tests (integration-tests)
+
 - [ ] `packages/memory/integration-tests/src/agent-memory.test.ts` - Tests agent memory integration
 - [ ] `packages/memory/integration-tests/src/working-memory.test.ts` - Tests working memory processor
 - [ ] `packages/memory/integration-tests/src/processors.test.ts` - Tests memory processors
@@ -47,6 +53,7 @@ This PR refactors Mastra's memory system to fully utilize input/output processor
 - [ ] `packages/memory/integration-tests/src/with-upstash-storage.test.ts` - Tests with upstash storage
 
 ### Memory Package Tests (integration-tests-v5 - AI SDK v5)
+
 - [ ] `packages/memory/integration-tests-v5/src/agent-memory.test.ts` - Tests agent memory with AI SDK v5
 - [ ] `packages/memory/integration-tests-v5/src/working-memory.test.ts` - Tests working memory with AI SDK v5
 - [ ] `packages/memory/integration-tests-v5/src/processors.test.ts` - Tests processors with AI SDK v5
@@ -54,11 +61,13 @@ This PR refactors Mastra's memory system to fully utilize input/output processor
 - [ ] `packages/memory/integration-tests-v5/src/streaming-memory.test.ts` - Tests streaming memory with AI SDK v5
 
 ### Core Package Tests - Agent
+
 - [ ] `packages/core/src/agent/__tests__/dynamic-memory.test.ts` - Tests dynamic memory with agent
 - [ ] `packages/core/src/agent/__tests__/stream.test.ts` - Tests agent streaming (may use memory)
 - [ ] `packages/core/src/agent/__tests__/tool-stream.test.ts` - Tests tool streaming (may use memory)
 
 ### Core Package Tests - Processors
+
 - [ ] `packages/core/src/processors/processors/message-history.test.ts` - Tests MessageHistory processor
 - [ ] `packages/core/src/processors/processors/semantic-recall.test.ts` - Tests SemanticRecall processor
 - [ ] `packages/core/src/processors/processors/working-memory.test.ts` - Tests WorkingMemory processor
@@ -70,18 +79,21 @@ This PR refactors Mastra's memory system to fully utilize input/output processor
 ## Workflow Step 1: Local Testing (Iterative)
 
 **First, always run from repo root:**
+
 1. `pnpm build` - Ensure all packages build successfully
 2. `pnpm lint` - Ensure all linting passes
 
 **Then run relevant tests:**
-- Run tests one at a time or in logical groups; *never* run all tests.
+
+- Run tests one at a time or in logical groups; _never_ run all tests.
 - Note any test setup issues (e.g., missing env vars, Node.js version) in this file and move on.
 - Note any failing tests in this file and move on.
 - Once all relevant tests are run, methodically fix each failing test, deep researching and validating fixes locally by re-running only the fixed tests.
 
 ## Workflow Step 2: CI Monitoring (After Local Fixes)
 
-*Only after* all recorded tests pass locally, push to CI and monitor using `sleep && gh pr checks` workflow.
+_Only after_ all recorded tests pass locally, push to CI and monitor using `sleep && gh pr checks` workflow.
+
 - For new CI failures, note them in this file. If they are unexpected tests, create a separate list for them.
 - Repeat Workflow Step 1 (local testing) with all previous tests + new CI failures.
 - This is the time to `git fetch main` and `git merge origin/main` carefully and manually (never automatically) to resolve conflicts and check for fixes from `main`.
@@ -95,9 +107,11 @@ Continue repeating steps 1-3 until everything is passing locally and in CI.
 ### Round 1 - Initial Local Testing
 
 #### Test Setup Issues
+
 **RESOLVED - All integration tests now runnable locally!**
 
 **Solution:** Run `pnpm install --ignore-workspace` in both integration test directories:
+
 - `cd packages/memory/integration-tests && pnpm install --ignore-workspace`
 - `cd packages/memory/integration-tests-v5 && pnpm install --ignore-workspace`
 
@@ -132,11 +146,13 @@ The test "should apply ToolCallFilter when retrieving messages" was failing with
    - **Fix:** Changed assertion from `expect(new MessageList().add(messages, 'memory').get.all.db().length).toBeLessThan(messagesV2.length)` to `expect(messages.length).toBeLessThan(messagesV2.length)`
 
 **Files Modified:**
+
 - `packages/memory/integration-tests/src/test-utils.ts` - Fixed `generateConversationHistory` to consolidate tool messages
 - `packages/core/src/agent/message-list/index.ts` - Fixed `MessageList.add` consolidation and `mastraDBMessageToAIV4UIMessage` tool invocation merging
 - `packages/memory/integration-tests/src/processors.test.ts` - Fixed incorrect assertion
 
 #### Passing Tests
+
 - ✅ `packages/core/src/processors/processors/message-history.test.ts` (18 tests) - WARNING: "Failed to update thread metadata: TypeError: Cannot read properties of undefined (reading 'length')" in 4 tests, but tests still pass
 - ✅ `packages/core/src/processors/processors/semantic-recall.test.ts` (24 tests) - Expected error logs in error handling tests
 - ✅ `packages/core/src/processors/processors/working-memory.test.ts` (11 tests) - Expected error logs in error handling tests
@@ -153,17 +169,20 @@ The test "should apply ToolCallFilter when retrieving messages" was failing with
 ## Summary
 
 ### Local Testing Complete ✅
+
 - **Total Tests Run:** 204 tests across 9 test files
 - **All Passing:** 204/204 tests
 - **Fixes Applied:** 1 (ToolCallFilter edge case)
 - **Setup Issues:** 5 test files cannot run locally due to missing dependencies/worker compilation errors (will be tested in CI)
 
 ### Ready for CI
+
 All locally runnable tests are passing. Proceeding to commit and push to CI for full validation.
 
 ## Merge from main (2025-06-20)
 
 ### Conflicts Resolved
+
 - **7 files with merge conflicts** resolved:
   - `packages/core/src/agent/workflows/prepare-stream/prepare-memory-step.ts` - Kept processor-based memory system
   - `packages/core/src/processors/index.ts` - Updated ai-tracing to observability imports
@@ -174,11 +193,13 @@ All locally runnable tests are passing. Proceeding to commit and push to CI for 
   - `packages/memory/integration-tests/src/processors.test.ts` - Added new test cases from main (TokenLimiter, combined processors)
 
 ### Build Fixes Applied
+
 - **ai-tracing → observability**: Updated all imports across processors module
 - **Import order**: Fixed with `pnpm lint --fix`
 - **Observability packages**: Fixed `@mastra/langsmith` and `@mastra/langfuse` build issues by installing dependencies
 
 ### Current Status ✅
+
 - **pnpm lint**: ✅ Passing
 - **pnpm build**: ✅ Passing (all packages)
 - **All conflicts resolved**: ✅
@@ -188,12 +209,14 @@ All locally runnable tests are passing. Proceeding to commit and push to CI for 
 ## Local Testing Results
 
 ### ToolCallFilter Fix ✅
+
 - **Issue**: ToolCallFilter was incorrectly removing V2 messages after filtering tool invocations
 - **Root Cause**: Final message removal logic used `hasNoToolInvocations` which was undefined for V2 messages
 - **Fix**: Changed condition to `hasNoToolParts && hasNoTextContent` to properly check V2 message structure
 - **Result**: All ToolCallFilter tests now passing
 
 ### Processor Tests ✅
+
 - **ToolCallFilter**: ✅ All tests passing
 - **TokenLimiter**: ✅ All 30 tests passing
 - **Structured Output**: ⚠️ 1 failing test due to LLM flakiness (AI_APICallError), unrelated to refactoring
