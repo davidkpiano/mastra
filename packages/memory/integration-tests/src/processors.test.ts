@@ -209,7 +209,7 @@ describe('Memory with Processors', () => {
     });
     const result = v2ToCoreMessages(filteredMessages);
     const messages = new MessageList({ threadId: thread.id, resourceId }).add(result, 'response').get.all.db();
-    
+
     // ToolCallFilter removes tool parts but doesn't necessarily remove entire messages
     // if they contain other content. The key test is that weather tools are gone.
     expect(messages.length).toBe(messagesV2.length);
@@ -245,7 +245,7 @@ describe('Memory with Processors', () => {
       runtimeContext: new RequestContext(),
     });
     const result3 = v2ToCoreMessages(filteredMessages3);
-    
+
     // ToolCallFilter removes tool parts but doesn't necessarily remove entire messages
     // if they contain other content. The key validation is that the specific tools are gone.
     expect(result3.length).toBeLessThanOrEqual(messagesV2.length);
@@ -268,7 +268,7 @@ describe('Memory with Processors', () => {
       runtimeContext: new RequestContext(),
     });
     const result4 = v2ToCoreMessages(filteredMessages4);
-    
+
     // ToolCallFilter removes tool parts but doesn't necessarily remove entire messages
     // if they contain other content. The key validation is that the specific tools are gone.
     expect(result4.length).toBeLessThanOrEqual(messagesV2.length);
@@ -481,13 +481,13 @@ describe('Memory with Processors', () => {
       threadId,
       resourceId,
     });
-    
+
     // Second message - use calculator tool
     await agent.generateLegacy('Calculate 123 * 456', {
       threadId,
       resourceId,
     });
-    
+
     // Third message - simple text response
     await agent.generateLegacy('Tell me something interesting about space', {
       threadId,
@@ -511,12 +511,12 @@ describe('Memory with Processors', () => {
     // Verify we have tool calls in the baseline
     const weatherToolCalls = filterToolCallsByName(baselineResult, 'get_weather');
     const calculatorToolCalls = filterToolCallsByName(baselineResult, 'calculator');
-    
+
     // Skip this test if the LLM didn't call tools (LLM flakiness)
     if (weatherToolCalls.length === 0 || calculatorToolCalls.length === 0) {
       return;
     }
-    
+
     expect(weatherToolCalls.length).toBeGreaterThan(0);
     expect(calculatorToolCalls.length).toBeGreaterThan(0);
 

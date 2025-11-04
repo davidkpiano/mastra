@@ -145,7 +145,7 @@ export function generateConversationHistory({
     const userContent = Array(25).fill(words).flat().join(' '); // ~100 tokens
     const finalUserMessageId = `message-${messageCount * 2}`;
     const finalUserMessageTime = startTime + messageCount * 2000;
-    
+
     messages.push({
       role: 'user',
       content: { format: 2, parts: [{ type: 'text', text: userContent }] },
