@@ -187,7 +187,9 @@ describe('Memory with Processors', () => {
     // No processors, just convert to core messages
     const result2 = v2ToCoreMessages(queryResult2.messages);
     const messages2 = new MessageList({ threadId: thread.id, resourceId }).add(result2, 'response').get.all.db();
-    expect(new MessageList().add(messages2, 'memory').get.all.db()).toHaveLength(messagesV2.length);
+    // MessageList.add with 'response' source consolidates messages, so messages2 will be shorter than queryResult2.messages
+    // MessageList.add with 'memory' source does NOT consolidate, so the final count will equal messages2.length
+    expect(new MessageList().add(messages2, 'memory').get.all.db()).toHaveLength(messages2.length);
     expect(filterToolCallsByName(result2, 'weather')).toHaveLength(1);
     expect(filterToolResultsByName(result2, 'weather')).toHaveLength(1);
     expect(filterToolCallsByName(result2, 'calculator')).toHaveLength(1);
