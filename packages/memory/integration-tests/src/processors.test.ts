@@ -90,7 +90,7 @@ describe('Memory with Processors', () => {
     });
 
     // Save messages
-    const saveResult = await memory.saveMessages({ messages: messagesV2 });
+    await memory.saveMessages({ messages: messagesV2 });
 
     // Get messages with a token limit of 250 (should get ~2.5 messages)
     const queryResult = await memory.query({
@@ -178,7 +178,7 @@ describe('Memory with Processors', () => {
     });
 
     // Save messages
-    const saveResult = await memory.saveMessages({ messages: messagesV2 });
+    await memory.saveMessages({ messages: messagesV2 });
 
     // filter weather tool calls
     const queryResult = await memory.query({
