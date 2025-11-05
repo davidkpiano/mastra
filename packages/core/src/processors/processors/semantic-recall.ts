@@ -328,17 +328,16 @@ ${formattedSections.join('\n')}
     }
 
     // Retrieve messages with context
-    const result = await this.storage.getMessages({
+    const result = await this.storage.listMessages({
       threadId,
       resourceId,
-      selectBy: {
-        include: filteredResults.map(r => ({
-          id: r.metadata?.message_id,
-          threadId: r.metadata?.thread_id,
-          withNextMessages: this.messageRange.after,
-          withPreviousMessages: this.messageRange.before,
-        })),
-      },
+      include: filteredResults.map(r => ({
+        id: r.metadata?.message_id,
+        threadId: r.metadata?.thread_id,
+        withNextMessages: this.messageRange.after,
+        withPreviousMessages: this.messageRange.before,
+      })),
+      perPage: false, // Fetch all matching messages
     });
 
     return result.messages;

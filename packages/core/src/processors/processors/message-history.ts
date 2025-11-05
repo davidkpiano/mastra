@@ -53,19 +53,22 @@ export class MessageHistory implements Processor {
 
     try {
       // 1. Fetch historical messages from storage (as DB format)
-      const result = await this.storage.getMessages({
+      const result = await this.storage.listMessages({
         threadId,
-        selectBy: {
-          last: this.lastMessages,
-        },
+        page: 1,
+        perPage: this.lastMessages,
       });
 
       // 2. Filter based on includeSystemMessages option
-      const filteredMessages = result.messages.filter(msg => this.includeSystemMessages || msg.role !== 'system');
+      const filteredMessages = result.messages.filter(
+        (msg: MastraDBMessage) => this.includeSystemMessages || msg.role !== 'system',
+      );
 
       // 3. Merge with incoming messages (avoiding duplicates by ID)
-      const messageIds = new Set(messages.map(m => m.id).filter(Boolean));
-      const uniqueHistoricalMessages = filteredMessages.filter(m => !m.id || !messageIds.has(m.id));
+      const messageIds = new Set(messages.map((m: MastraDBMessage) => m.id).filter(Boolean));
+      const uniqueHistoricalMessages = filteredMessages.filter(
+        (m: MastraDBMessage) => !m.id || !messageIds.has(m.id),
+      );
 
       return [...uniqueHistoricalMessages, ...messages];
     } catch {
@@ -113,8 +116,10 @@ export class MessageHistory implements Processor {
       try {
         const thread = await this.storage.getThreadById({ threadId });
         if (thread) {
-          const result = await this.storage.getMessages({
+          const result = await this.storage.listMessages({
             threadId,
+            page: 1,
+            perPage: 1000,
           });
 
           await this.storage.updateThread({

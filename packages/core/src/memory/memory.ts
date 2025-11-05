@@ -275,18 +275,6 @@ https://mastra.ai/en/docs/memory/overview`,
     return mergedConfig;
   }
 
-  /**
-   * Retrieve messages from memory for a given thread.
-   * @param args Configuration for retrieving messages
-   * @returns The remembered messages
-   */
-  abstract rememberMessages(args: {
-    threadId: string;
-    resourceId?: string;
-    vectorMessageSearch?: string;
-    config?: MemoryConfig;
-  }): Promise<{ messages: MastraDBMessage[] }>;
-
   estimateTokens(text: string): number {
     return Math.ceil(text.split(' ').length * 1.3);
   }

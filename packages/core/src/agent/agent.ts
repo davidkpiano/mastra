@@ -473,12 +473,12 @@ export class Agent<TAgentId extends string = string, TTools extends ToolsInput =
     if (!memory) {
       return { messages: [] };
     }
-    return memory.rememberMessages({
+    return memory.recall({
       threadId,
       resourceId,
-      config: memoryConfig,
+      threadConfig: memoryConfig,
       // The new user messages aren't in the list yet cause we add memory messages first to try to make sure ordering is correct (memory comes before new user messages)
-      vectorMessageSearch,
+      vectorSearchString: vectorMessageSearch,
     });
   }
 
