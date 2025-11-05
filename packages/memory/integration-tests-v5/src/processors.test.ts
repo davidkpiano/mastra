@@ -76,9 +76,10 @@ describe('Memory with Processors', () => {
     await memory.saveMessages({ messages: messagesV2 });
 
     // Get messages with a token limit of 250 (should get ~2.5 messages)
-    const queryResult = await memory.query({
+    const queryResult = await memory.recall({
       threadId: thread.id,
       perPage: 20,
+      orderBy: { field: 'createdAt', direction: 'DESC' },
     });
     const tokenLimiter = new TokenLimiter(250);
     const result = await tokenLimiter.processInput({
@@ -109,9 +110,10 @@ describe('Memory with Processors', () => {
     );
 
     // Now query with a very high token limit that should return all messages
-    const allMessagesQuery = await memory.query({
+    const allMessagesQuery = await memory.recall({
       threadId: thread.id,
       perPage: 20,
+      orderBy: { field: 'createdAt', direction: 'DESC' },
     });
     expect(allMessagesQuery.messages.length).toBe(20);
 
@@ -161,7 +163,7 @@ describe('Memory with Processors', () => {
     await memory.saveMessages({ messages: messagesV2 });
 
     // filter weather tool calls
-    const queryResult = await memory.query({
+    const queryResult = await memory.recall({
       threadId: thread.id,
       perPage: 20,
     });
@@ -180,7 +182,7 @@ describe('Memory with Processors', () => {
     expect(filterToolResultsByName(result, 'calculator')).toHaveLength(1);
 
     // make another query with no processors to make sure memory messages in DB were not altered and were only filtered from results
-    const queryResult2 = await memory.query({
+    const queryResult2 = await memory.recall({
       threadId: thread.id,
       perPage: 20,
     });
@@ -196,7 +198,7 @@ describe('Memory with Processors', () => {
     expect(filterToolResultsByName(result2, 'calculator')).toHaveLength(1);
 
     // filter all by name
-    const queryResult3 = await memory.query({
+    const queryResult3 = await memory.recall({
       threadId: thread.id,
       perPage: 20,
     });
@@ -213,7 +215,7 @@ describe('Memory with Processors', () => {
     expect(filterToolResultsByName(result3, 'calculator')).toHaveLength(0);
 
     // filter all by default
-    const queryResult4 = await memory.query({
+    const queryResult4 = await memory.recall({
       threadId: thread.id,
       perPage: 20,
     });
@@ -250,7 +252,7 @@ describe('Memory with Processors', () => {
     await memory.saveMessages({ messages: messagesV2 });
 
     // Apply multiple processors: first remove weather tool calls, then limit to 250 tokens
-    const queryResult = await memory.query({
+    const queryResult = await memory.recall({
       threadId: thread.id,
       perPage: 20,
     });
@@ -369,7 +371,7 @@ describe('Memory with Processors', () => {
     const allUserMessages = requestInputMessages2.filter((m: CoreMessage) => m.role === 'user');
     expect(allUserMessages.length).toBe(2);
 
-    const remembered = await memory.query({
+    const remembered = await memory.recall({
       threadId: thread.id,
       resourceId,
       perPage: 20,
@@ -448,7 +450,7 @@ describe('Memory with Processors', () => {
     });
 
     // Query with no processors to verify baseline message count
-    const queryResult = await memory.query({
+    const queryResult = await memory.recall({
       threadId,
       perPage: 20,
     });
@@ -467,7 +469,7 @@ describe('Memory with Processors', () => {
     expect(calculatorToolCalls.length).toBeGreaterThan(0);
 
     // Test filtering weather tool calls
-    const weatherQueryResult = await memory.query({
+    const weatherQueryResult = await memory.recall({
       threadId,
       perPage: 20,
     });
@@ -490,7 +492,7 @@ describe('Memory with Processors', () => {
     expect(filterToolCallsByName(weatherFilteredResult, 'calculator').length).toBeGreaterThan(0);
 
     // Test token limiting
-    const tokenLimitQuery = await memory.query({
+    const tokenLimitQuery = await memory.recall({
       threadId,
       perPage: 20,
     });
@@ -505,7 +507,7 @@ describe('Memory with Processors', () => {
     expect(tokenLimitedResult.length).toBeLessThan(baselineResult.length);
 
     // Test combining processors
-    const combinedQuery = await memory.query({
+    const combinedQuery = await memory.recall({
       threadId,
       perPage: 20,
     });
@@ -558,7 +560,7 @@ describe('Memory with Processors', () => {
     });
 
     // Query the message back
-    const queryResult = await memory.query({
+    const queryResult = await memory.recall({
       threadId: thread.id,
       perPage: 1,
     });

@@ -11,7 +11,7 @@ import { MessageHistory, SemanticRecall, WorkingMemory } from '../processors/pro
 import type { RequestContext } from '../request-context';
 import type {
   MastraStorage,
-  StorageGetMessagesArg,
+  StorageListMessagesInput,
   StorageListThreadsByResourceIdInput,
   StorageListThreadsByResourceIdOutput,
 } from '../storage';
@@ -276,9 +276,9 @@ https://mastra.ai/en/docs/memory/overview`,
   }
 
   /**
-   * Apply all configured message processors to a list of messages.
-   * @param messages The messages to process
-   * @returns The processed messages
+   * Retrieve messages from memory for a given thread.
+   * @param args Configuration for retrieving messages
+   * @returns The remembered messages
    */
   abstract rememberMessages(args: {
     threadId: string;
@@ -337,13 +337,17 @@ https://mastra.ai/en/docs/memory/overview`,
   }): Promise<{ messages: MastraDBMessage[] }>;
 
   /**
-   * Retrieves all messages for a specific thread
+   * Retrieves messages for a specific thread with optional semantic recall
    * @param threadId - The unique identifier of the thread
+   * @param resourceId - Optional resource ID for validation
+   * @param vectorSearchString - Optional search string for semantic recall
+   * @param config - Optional memory configuration
    * @returns Promise resolving to array of messages in mastra-db format
    */
-  abstract query(
-    args: StorageGetMessagesArg & {
+  abstract recall(
+    args: StorageListMessagesInput & {
       threadConfig?: MemoryConfig;
+      vectorSearchString?: string;
     },
   ): Promise<{ messages: MastraDBMessage[] }>;
 

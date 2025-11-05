@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { openai } from '@ai-sdk/openai';
 import { openai as openai_v5 } from '@ai-sdk/openai-v5';
 import type { LanguageModelV2 } from '@ai-sdk/provider-v5';
-import type { ToolInvocationUIPart } from '@ai-sdk/ui-utils';
+import type { ToolInvocationUIPart } from '@ai-sdk/ui-utils-v5';
 import type { LanguageModelV1 } from '@internal/ai-sdk-v4/model';
 import { MockLanguageModelV1 } from '@internal/ai-sdk-v4/test';
 import { MockLanguageModelV2, convertArrayToReadableStream } from 'ai-v5/test';
@@ -128,7 +128,7 @@ function runStreamTest(version: 'v1' | 'v2') {
       expect(caught).toBe(true);
 
       // After interruption, check what was saved
-      let result = await mockMemory.getMessages({
+      let result = await mockMemory.recall({
         threadId: 'thread-partial-rescue',
         resourceId: 'resource-partial-rescue',
       });
@@ -200,7 +200,7 @@ function runStreamTest(version: 'v1' | 'v2') {
       await stream.consumeStream();
 
       expect(saveCallCount).toBeGreaterThan(1);
-      const result = await mockMemory.getMessages({
+      const result = await mockMemory.recall({
         threadId: 'thread-echo',
         resourceId: 'resource-echo',
       });
@@ -280,7 +280,7 @@ function runStreamTest(version: 'v1' | 'v2') {
       await stream.consumeStream();
 
       expect(saveCallCount).toBeGreaterThan(1);
-      const result = await mockMemory.getMessages({
+      const result = await mockMemory.recall({
         threadId: 'thread-multi',
         resourceId: 'resource-multi',
       });
@@ -323,7 +323,7 @@ function runStreamTest(version: 'v1' | 'v2') {
 
       await stream.consumeStream();
 
-      const result = await mockMemory.getMessages({ threadId: 'thread-1', resourceId: 'resource-1' });
+      const result = await mockMemory.recall({ threadId: 'thread-1', resourceId: 'resource-1' });
       const messages = result.messages;
       // Check that the last message matches the expected final output
       expect(
@@ -434,7 +434,7 @@ function runStreamTest(version: 'v1' | 'v2') {
 
       expect(saveCallCount).toBe(1);
 
-      const result = await mockMemory.getMessages({ threadId: 'thread-2', resourceId: 'resource-2' });
+      const result = await mockMemory.recall({ threadId: 'thread-2', resourceId: 'resource-2' });
       const messages = result.messages;
       expect(messages.length).toBe(1);
       expect(messages[0].role).toBe('user');
@@ -478,7 +478,7 @@ function runStreamTest(version: 'v1' | 'v2') {
       });
 
       expect(saveCallCount).toBe(0);
-      const result = await mockMemory.getMessages({ threadId: 'thread-3', resourceId: 'resource-3' });
+      const result = await mockMemory.recall({ threadId: 'thread-3', resourceId: 'resource-3' });
       const messages = result.messages;
       expect(messages.length).toBe(0);
     });
@@ -679,7 +679,6 @@ function runStreamTest(version: 'v1' | 'v2') {
       const mockMemory = new MockMemory();
       const threadId = '1';
       const resourceId = '2';
-
       // Save historical messages to storage (for MessageHistory processor to retrieve)
       await mockMemory.storage.saveThread({
         thread: { id: threadId, createdAt: new Date(), resourceId, updatedAt: new Date() },
@@ -713,6 +712,19 @@ function runStreamTest(version: 'v1' | 'v2') {
         ],
         format: 'v2',
       });
+
+      // @ts-ignore
+      mockMemory.recall = async function recall() {
+        const list = new MessageList({ threadId, resourceId }).add(
+          [
+            { role: `user`, content: `hello!`, threadId, resourceId },
+            { role: 'assistant', content: 'hi, how are you?', threadId, resourceId },
+          ],
+          `memory`,
+        );
+        const remembered = list.get.remembered.db();
+        return { messages: remembered };
+      };
 
       mockMemory.getThreadById = async function getThreadById() {
         return { id: '1', createdAt: new Date(), resourceId: '2', updatedAt: new Date() } satisfies StorageThreadType;
@@ -877,7 +889,7 @@ function runStreamTest(version: 'v1' | 'v2') {
           },
         });
 
-        // request.body.input contains the UI message format
+// request.body.input contains the UI message format
         // with input_text/output_text for user/assistant messages
         // and function_call/function_call_output for tool calls/results
         const requestInput = secondResponse.request.body.input;
