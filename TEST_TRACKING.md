@@ -221,41 +221,26 @@ All locally runnable tests are passing. Proceeding to commit and push to CI for 
 - **TokenLimiter**: ✅ All 30 tests passing
 - **Structured Output**: ⚠️ 1 failing test due to LLM flakiness (AI_APICallError), unrelated to refactoring
 
-## CI Status (Latest)
+## CI Status (Latest - After Second main Merge)
 
-### Passing ✅
-- **Lint**: ✅ Passing
-- **Prebuild**: ✅ Passing
-- **Quality assurance**: ✅ Passing
-- **Core Package Tests**: ✅ Passing (tool signature fixes resolved all failures)
-- **RAG Tests**: ✅ Passing
-- **Server Package Tests**: ✅ Passing
-- **MCP Package Tests**: ✅ Passing
-- **Deployer Package Tests**: ✅ Passing
-- **Combined store Tests**: ✅ Passing
-- **Tool Builder Tests**: ✅ Passing
-- **Auth Package Tests**: ✅ Passing
-- **Observability Package Tests**: ✅ Passing
+### Second main Merge Completed ✅
+- **Conflicts Resolved**: 6 files
+  - `docs/src/content/en/guides/migrations/upgrade-to-v1.mdx` (accepted deletion)
+  - `packages/core/src/agent/__tests__/stream.test.ts` (kept HEAD assertions, updated `query` to `recall`)
+  - `packages/core/src/agent/agent.ts` (removed re-introduced `getMemoryMessages`)
+  - `packages/core/src/memory/memory.ts` (removed deprecated `rememberMessages`)
+  - `packages/core/src/storage/types.ts` (removed deprecated `StorageGetMessagesArg`)
+  - `packages/memory/integration-tests-v5/src/streaming-memory.test.ts` (adopted `chat.addToolResult`)
+- **Key Changes from main**:
+  - PR #9701: Removed `rememberMessages`, renamed `query` to `recall`
+  - PR #9695: Removed `getMessages` API, replaced with `listMessages`
+  - PR #9587: Tool signature changes to `(inputData, context)`
+- **Local Validation**: ✅ `pnpm lint && pnpm build` passing
 
-### Failing ❌
-- **Memory Tests**: ❌ Failing due to LLM flakiness
-  - `working-memory.test.ts`: `ZodError: Expected object, received string` for `updateWorkingMemory` tool
-  - LLM is passing a JSON string instead of a parsed object for the `memory` parameter
-  - **Not a regression** - this is inherent LLM behavior/flakiness
-- **Memory Tests (StreamVNext/AI5)**: ❌ Failing due to LLM flakiness
-  - `agent-memory.test.ts`: `AI_APICallError: No tool output found for function call`
-  - LLM API error where tool call is made but no output is provided
-  - **Not a regression** - this is LLM API flakiness
-
-### Pending ⏳
-- **E2E Tests**: ⏳ Pending (historically flaky due to changeset-cli output)
-- **Core Package Tests**: ⏳ Pending (likely passing based on local tests)
-
-### Ignored 🚫
-- **Vercel Deployments**: 🚫 Ignored (external to core refactoring)
-  - Vercel – mastra-docs
-  - Vercel – mastra-docs-1.x
-  - Vercel – mastra-docusaurus
+### Ready for CI ⏳
+- All merge conflicts resolved
+- All local validation passing
+- Awaiting CI results for latest changes
 
 ## Notes
 
